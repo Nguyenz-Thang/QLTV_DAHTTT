@@ -1,0 +1,32 @@
+// app.js
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+dotenv.config();
+
+const sachRoutes = require("./src/app/routes/sachRoutes");
+const { getPool } = require("./src/config/db");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Ensure DB connection at startup
+getPool().catch((err) => {
+  console.error("Failed to connect DB on startup:", err.message);
+  // you may choose to process.exit(1) here
+});
+
+app.get("/", (req, res) => res.send("Library API running"));
+
+const authRoutes = require("../backend/src/app/routes/authRoutes");
+app.use("/api/auth", authRoutes);
+
+// Ví dụ bảo vệ route sách
+const { authMiddleware } = require("../backend/src/app/middleware/auth");
+app.use("/api/sach", authMiddleware, sachRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () =>
+  console.log(`Server listening on http://localhost:${PORT}`)
+);
