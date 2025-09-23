@@ -33,7 +33,7 @@ export default function RegisterPage() {
       await register({ tenDangNhap, matKhau, vaiTro });
       setLoading(false);
       alert("Đăng ký thành công. Vui lòng đăng nhập.");
-      nav("/"); // chuyển về trang login ("/")
+      nav("/login"); // chuyển về trang login ("/")
     } catch (err) {
       setLoading(false);
       // err có thể là object { message: '...' } hoặc lỗi fetch
@@ -53,7 +53,10 @@ export default function RegisterPage() {
         <input
           style={styles.input}
           value={tenDangNhap}
-          onChange={(e) => setTenDangNhap(e.target.value)}
+          onChange={(e) => {
+            setTenDangNhap(e.target.value);
+            console.log(e.target.value);
+          }}
           placeholder="Tên đăng nhập"
         />
 
@@ -62,7 +65,10 @@ export default function RegisterPage() {
           style={styles.input}
           type="password"
           value={matKhau}
-          onChange={(e) => setMatKhau(e.target.value)}
+          onChange={(e) => {
+            setMatKhau(e.target.value);
+            console.log(e.target.value);
+          }}
           placeholder="Mật khẩu"
         />
 
@@ -90,7 +96,7 @@ export default function RegisterPage() {
         </button>
 
         <div style={styles.note}>
-          Đã có tài khoản? <a href="/">Đăng nhập</a>
+          Đã có tài khoản? <a href="/login">Đăng nhập</a>
         </div>
       </form>
     </div>

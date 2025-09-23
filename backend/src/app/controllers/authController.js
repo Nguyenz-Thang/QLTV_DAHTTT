@@ -10,7 +10,9 @@ async function register(req, res) {
   try {
     const { tenDangNhap, matKhau, vaiTro, maDG, maTT } = req.body;
     if (!tenDangNhap || !matKhau)
-      return res.status(400).json({ message: "Thiếu username hoặc password" });
+      return res.status(400).json({
+        message: "Thiếu username hoặc password",
+      });
 
     const existing = await TaiKhoan.findByUsername(tenDangNhap);
     if (existing)
@@ -49,8 +51,6 @@ async function login(req, res) {
       return res.status(404).json({ message: "Tài khoản không tồn tại" });
 
     const ok = await bcrypt.compare(matKhau, user.matKhau);
-    console.log("Người nhập:", matKhau);
-    console.log("Trong DB:", user.matKhau);
     if (!ok) {
       return res
         .status(401)

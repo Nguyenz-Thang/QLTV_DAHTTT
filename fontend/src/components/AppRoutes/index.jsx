@@ -19,6 +19,7 @@ function AppRoutes() {
             element={token ? <Navigate to="/sach" /> : <Navigate to="/login" />}
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/sach"
             element={token ? <BookList /> : <Navigate to="/login" />}

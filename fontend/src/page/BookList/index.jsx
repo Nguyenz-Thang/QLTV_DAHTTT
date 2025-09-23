@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+import styles from "./BookList.module.scss";
 export default function BookListPage() {
   const { token, logout } = useContext(AuthContext);
   const [books, setBooks] = useState([]);
@@ -15,25 +15,28 @@ export default function BookListPage() {
     async function fetchBooks() {
       setLoading(true);
       setErr(null);
-      try {
-        const res = await fetch("http://localhost:5000/api/sach", {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-        if (res.status === 401 || res.status === 403) {
-          // token invalid/expired -> logout and redirect to login
-          logout();
-          nav("/");
-          return;
+      setTimeout(async () => {
+        try {
+          const res = await fetch("http://localhost:5000/api/sach", {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          });
+          if (res.status === 401 || res.status === 403) {
+            // token invalid/expired -> logout and redirect to login
+            logout();
+            nav("/login");
+            return;
+          }
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Lấy sách thất bại");
+          setBooks(data.data || []);
+          console.log(data.data);
+        } catch (error) {
+          if (error.name !== "AbortError") setErr(error.message);
+        } finally {
+          setLoading(false);
         }
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Lấy sách thất bại");
-        setBooks(data.data || []);
-      } catch (error) {
-        if (error.name !== "AbortError") setErr(error.message);
-      } finally {
-        setLoading(false);
-      }
+      }, 3000);
     }
     fetchBooks();
     return () => controller.abort();
@@ -62,7 +65,15 @@ export default function BookListPage() {
         </div>
       </div>
 
-      {loading && <p>Đang tải...</p>}
+      {loading ? (
+        <div className={styles["spinner-follow-the-leader-line"]}>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      ) : null}
       {err && <div style={{ color: "crimson" }}>{err}</div>}
 
       {!loading && books.length === 0 && <p>Không có sách nào.</p>}
@@ -74,7 +85,6 @@ export default function BookListPage() {
             style={{ padding: 8, borderBottom: "1px solid #eee" }}
           >
             <strong>{b.tieuDe}</strong>{" "}
-            {b.ISBN ? <span>— {b.ISBN}</span> : null}
             <div style={{ fontSize: 13, color: "#666" }}>
               Số lượng: {b.soLuong} | Đang mượn: {b.soLuongMuon}
             </div>

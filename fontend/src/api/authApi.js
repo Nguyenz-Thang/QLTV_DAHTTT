@@ -9,15 +9,17 @@ export async function login(username, password) {
   return res.json();
 }
 
-export async function register(username, password, role = "Độc giả") {
+export async function register(payload) {
   const res = await fetch(`${API}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tenDangNhap: username,
-      matKhau: password,
-      vaiTro: role,
-    }),
+    body: JSON.stringify(payload),
   });
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.message || "Server error");
+    err.body = data;
+    throw err;
+  }
+  return data;
 }
