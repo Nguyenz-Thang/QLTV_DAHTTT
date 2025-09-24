@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../../api/authApi";
-
+import styles from "./Register.module.scss";
 export default function RegisterPage() {
   const [tenDangNhap, setTenDangNhap] = useState("");
   const [matKhau, setMatKhau] = useState("");
@@ -43,111 +43,66 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={styles.container}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <h2>Đăng ký tài khoản</h2>
+    <div className={styles.container}>
+      <div className={styles.box}>
+        <div className={styles.logoline1}></div>
+        <div className={styles.logoline2}></div>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <h2 className={styles.title}>Đăng ký tài khoản</h2>
 
-        {error && <div style={styles.err}>{error}</div>}
+          {error && <div className={styles.err}>{error}</div>}
 
-        <label style={styles.label}>Tên đăng nhập</label>
-        <input
-          style={styles.input}
-          value={tenDangNhap}
-          onChange={(e) => {
-            setTenDangNhap(e.target.value);
-            console.log(e.target.value);
-          }}
-          placeholder="Tên đăng nhập"
-        />
+          <label className={styles.label}>Tên đăng nhập</label>
+          <input
+            className={styles.input}
+            value={tenDangNhap}
+            onChange={(e) => {
+              setTenDangNhap(e.target.value);
+              console.log(e.target.value);
+            }}
+            placeholder="Tên đăng nhập"
+          />
 
-        <label style={styles.label}>Mật khẩu</label>
-        <input
-          style={styles.input}
-          type="password"
-          value={matKhau}
-          onChange={(e) => {
-            setMatKhau(e.target.value);
-            console.log(e.target.value);
-          }}
-          placeholder="Mật khẩu"
-        />
+          <label className={styles.label}>Mật khẩu</label>
+          <input
+            className={styles.input}
+            type="password"
+            value={matKhau}
+            onChange={(e) => {
+              setMatKhau(e.target.value);
+              console.log(e.target.value);
+            }}
+            placeholder="Mật khẩu"
+          />
 
-        <label style={styles.label}>Xác nhận mật khẩu</label>
-        <input
-          style={styles.input}
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Xác nhận mật khẩu"
-        />
+          <label className={styles.label}>Xác nhận mật khẩu</label>
+          <input
+            className={styles.input}
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="Xác nhận mật khẩu"
+          />
 
-        <label style={styles.label}>Vai trò</label>
-        <select
-          value={vaiTro}
-          onChange={(e) => setVaiTro(e.target.value)}
-          style={styles.select}
-        >
-          <option>Độc giả</option>
-          <option>Nhân viên</option>
-        </select>
+          <label className={styles.label}>Vai trò</label>
+          <select
+            value={vaiTro}
+            onChange={(e) => setVaiTro(e.target.value)}
+            className={styles.select}
+          >
+            <option>Độc giả</option>
+            <option>Nhân viên</option>
+          </select>
 
-        <button type="submit" style={styles.btn} disabled={loading}>
-          {loading ? "Đang xử lý..." : "Đăng ký"}
-        </button>
+          <button type="submit" className={styles.btn} disabled={loading}>
+            {loading ? "Đang xử lý..." : "Đăng ký"}
+          </button>
 
-        <div style={styles.note}>
-          Đã có tài khoản? <a href="/login">Đăng nhập</a>
-        </div>
-      </form>
+          <div className={styles.footer}>
+            Đã có tài khoản? <a href="/login">Đăng nhập</a>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  //   container: {
-  //     display: "flex",
-  //     justifyContent: "center",
-  //     alignItems: "center",
-  //     minHeight: "70vh",
-  //   },
-  //   form: {
-  //     width: 360,
-  //     padding: 20,
-  //     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-  //     borderRadius: 8,
-  //     background: "#fff",
-  //   },
-  //   label: { display: "block", marginTop: 12, marginBottom: 6, fontSize: 14 },
-  //   input: {
-  //     width: "100%",
-  //     padding: 10,
-  //     borderRadius: 6,
-  //     border: "1px solid #ddd",
-  //     boxSizing: "border-box",
-  //   },
-  //   select: {
-  //     width: "100%",
-  //     padding: 10,
-  //     borderRadius: 6,
-  //     border: "1px solid #ddd",
-  //     boxSizing: "border-box",
-  //   },
-  //   btn: {
-  //     marginTop: 16,
-  //     width: "100%",
-  //     padding: "10px 12px",
-  //     borderRadius: 6,
-  //     background: "#1976d2",
-  //     color: "#fff",
-  //     border: "none",
-  //     cursor: "pointer",
-  //   },
-  //   err: {
-  //     background: "#ffe6e6",
-  //     color: "#cc0000",
-  //     padding: 10,
-  //     borderRadius: 6,
-  //     marginBottom: 10,
-  //   },
-  //   note: { marginTop: 12, fontSize: 13, textAlign: "center" },
-};

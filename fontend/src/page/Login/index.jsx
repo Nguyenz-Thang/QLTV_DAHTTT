@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-
+import styles from "./Login.module.scss";
 export default function LoginPage() {
   const { login } = useContext(AuthContext);
   const [username, setUsername] = useState("");
@@ -38,29 +38,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: "40px auto" }}>
-      <h2>Đăng nhập</h2>
-      {err && <div style={{ color: "crimson", marginBottom: 10 }}>{err}</div>}
-      <form onSubmit={handleLogin}>
-        <input
-          placeholder="Tên đăng nhập"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ width: "100%", padding: 8, marginBottom: 8 }}
-        />
-        <input
-          placeholder="Mật khẩu"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ width: "100%", padding: 8, marginBottom: 8 }}
-        />
-        <button type="submit" disabled={loading} style={{ padding: 10 }}>
-          {loading ? "Đang..." : "Đăng nhập"}
-        </button>
-      </form>
-      <div style={{ marginTop: 12 }}>
-        Chưa có tài khoản? <a href="/register">Đăng ký</a>
+    <div className={styles.container}>
+      <div className={styles.box}>
+        <div className={styles.logoline1}></div>
+        <div className={styles.logoline2}></div>
+        <h2 className={styles.title}>ĐĂNG NHẬP</h2>
+        {err && <div style={{ color: "red", marginBottom: "10px" }}>{err}</div>}
+        <form onSubmit={handleLogin}>
+          <label>
+            <input
+              className={styles.input}
+              placeholder="Tên đăng nhập"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <div className={styles.key}></div>
+          </label>
+
+          <input
+            className={styles.input}
+            placeholder="Nhập mật khẩu"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button className={styles.button} type="submit" disabled={loading}>
+            {loading ? "Đang..." : "ĐĂNG NHẬP"}
+          </button>
+        </form>
+        <div className={styles.footer}>
+          Chưa có tài khoản? <a href="/register">Đăng ký</a>
+        </div>
       </div>
     </div>
   );
