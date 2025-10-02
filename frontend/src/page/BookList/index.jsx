@@ -43,7 +43,7 @@ export default function BookListPage() {
   }, [token, logout, nav]);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 20 }} className={styles.body}>
       <div
         style={{
           display: "flex",

@@ -90,8 +90,8 @@ export default function RegisterPage() {
             onChange={(e) => setVaiTro(e.target.value)}
             className={styles.select}
           >
-            <option>Độc giả</option>
-            <option>Nhân viên</option>
+            <option className={styles.option}>Độc giả</option>
+            <option className={styles.option}>Nhân viên</option>
           </select>
 
           <button type="submit" className={styles.btn} disabled={loading}>

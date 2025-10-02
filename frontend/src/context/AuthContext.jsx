@@ -4,18 +4,27 @@ import { createContext, useState } from "react";
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  // khởi tạo từ localStorage, không cần gọi API
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+      return null;
+    }
+  });
   const [token, setToken] = useState(localStorage.getItem("token"));
 
-  const login = (data) => {
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem("token", data.token);
+  const login = ({ user, token }) => {
+    setUser(user);
+    setToken(token);
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("token", token);
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+    localStorage.removeItem("user");
     localStorage.removeItem("token");
   };
 
