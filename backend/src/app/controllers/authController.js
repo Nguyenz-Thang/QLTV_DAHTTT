@@ -61,6 +61,7 @@ async function login(req, res) {
       maTK: user.maTK,
       tenDangNhap: user.tenDangNhap,
       vaiTro: user.vaiTro,
+      hoTen: user.hoTen,
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
@@ -71,4 +72,32 @@ async function login(req, res) {
   }
 }
 
-module.exports = { register, login };
+async function changePassword(req, res) {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Thiếu mật khẩu cũ hoặc mới" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Mật khẩu mới phải từ 6 ký tự" });
+    }
+
+    // req.user.maTK có từ middleware auth
+    const me = await TaiKhoan.findByMaTK(req.user.maTK);
+    if (!me)
+      return res.status(404).json({ message: "Không tìm thấy tài khoản" });
+
+    const ok = await bcrypt.compare(oldPassword, me.matKhau);
+    if (!ok) return res.status(401).json({ message: "Mật khẩu cũ không đúng" });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await TaiKhoan.updatePassword(me.maTK, hashed);
+
+    return res.json({ success: true, message: "Đổi mật khẩu thành công" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+}
+
+module.exports = { register, login, changePassword };

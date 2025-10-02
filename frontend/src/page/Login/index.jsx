@@ -62,12 +62,17 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <a className={styles.forgotPassword} href="/forgot-password">
+            Quên mật khẩu
+          </a>
           <button className={styles.button} type="submit" disabled={loading}>
             {loading ? "Đang..." : "ĐĂNG NHẬP"}
           </button>
         </form>
         <div className={styles.footer}>
-          Chưa có tài khoản? <a href="/register">Đăng ký</a>
+          <a className={styles.xongsexoa} href="/register">
+            Đăng ký
+          </a>
         </div>
       </div>
     </div>

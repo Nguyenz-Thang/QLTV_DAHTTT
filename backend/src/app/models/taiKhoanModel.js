@@ -7,7 +7,9 @@ async function findByUsername(username) {
   const result = await pool
     .request()
     .input("username", sql.NVarChar, username)
-    .query("SELECT * FROM TaiKhoan WHERE tenDangNhap = @username");
+    .query(
+      "SELECT * FROM TaiKhoan t left join DocGia d on t.maDG = d.maDG WHERE t.tenDangNhap = @username"
+    );
   return result.recordset[0] || null;
 }
 
@@ -43,5 +45,13 @@ async function createUser({
     `);
   return { maTK, tenDangNhap, vaiTro, maDG, maTT };
 }
+async function updatePassword(maTK, newHashed) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input("maTK", sql.NVarChar, maTK)
+    .input("matKhau", sql.NVarChar, newHashed)
+    .query(`UPDATE TaiKhoan SET matKhau = @matKhau WHERE maTK = @maTK`);
+}
 
-module.exports = { findByUsername, findByMaTK, createUser };
+module.exports = { findByUsername, findByMaTK, createUser, updatePassword };

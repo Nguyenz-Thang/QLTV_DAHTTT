@@ -1,0 +1,78 @@
+.header {
+  height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  background-color: #223771;
+  color: #96aae0;
+}
+
+.content {
+  margin-left: auto;
+  margin-right: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.content:hover {
+  color: #fd7e14;
+}
+
+#avt {
+  width: 32px;
+  height: 32px;
+  border-radius: 50px;
+  object-fit: cover;
+  box-shadow: 0 0 10px #3f51b5;
+}
+#avt2 {
+  width: 50px;
+  height: 50px;
+  border-radius: 50px;
+  object-fit: cover;
+  box-shadow: 0 0 10px #3f51b5;
+}
+
+/* tạo chút khoảng cách giữa content và icon chevron */
+.header :global(svg) {
+  margin-left: 6px;
+}
+
+.user {
+  background-color: #d6e0ff;
+  height: 100px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.username {
+  margin: 10px;
+}
+
+.changePassword,
+.logOut {
+  display: flex; /* căn dọc cho icon + chữ */
+  align-items: center; /* giữa dọc */
+  gap: 10px; /* cách icon ↔ chữ */
+  height: 56px; /* hoặc 48px tùy bạn */
+  padding: 0 15px; /* chỉ padding trái/phải */
+  color: #223771;
+  width: 100%; /* full hàng cho dễ click */
+  border-radius: 8px;
+}
+
+.changePassword:hover,
+.logOut:hover {
+  background: #f3f4f6; /* tùy chọn highlight */
+  color: #fd7e14;
+  cursor: pointer;
+}
+
+/* nếu icon bị lệch do CSS khác */
+.changePassword svg,
+.logOut svg {
+  flex: 0 0 auto;
+}

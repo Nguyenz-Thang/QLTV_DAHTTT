@@ -23,7 +23,7 @@ const authRoutes = require("../backend/src/app/routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
 // Ví dụ bảo vệ route sách
-const { authMiddleware } = require("../backend/src/app/middleware/auth");
+const { authMiddleware } = require("./src/app/middleware/auth");
 app.use("/api/sach", authMiddleware, sachRoutes);
 
 const PORT = process.env.PORT || 5000;
