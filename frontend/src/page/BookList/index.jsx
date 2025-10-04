@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import styles from "./BookList.module.scss";
+
 export default function BookListPage() {
   const { token, logout } = useContext(AuthContext);
   const [books, setBooks] = useState([]);
@@ -30,7 +31,6 @@ export default function BookListPage() {
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || "Lấy sách thất bại");
           setBooks(data.data || []);
-          console.log(data.data);
         } catch (error) {
           if (error.name !== "AbortError") setErr(error.message);
         } finally {
@@ -43,7 +43,7 @@ export default function BookListPage() {
   }, [token, logout, nav]);
 
   return (
-    <div style={{ padding: 20 }} className={styles.body}>
+    <div className={styles.body}>
       <div
         style={{
           display: "flex",

@@ -4,12 +4,12 @@ import {
   Logs,
   Home,
   BookOpen,
-  Newspaper,
-  Phone,
   Settings,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
+  ClipboardList,
+  Users,
+  UserCheck,
+  UserCog,
 } from "lucide-react";
 import styles from "./Sidebar.module.scss";
 import { AuthContext } from "../../../../context/AuthContext"; // chỉnh path nếu khác
@@ -55,15 +55,81 @@ export default function Sidebar() {
           <Home className={styles.icon} />
           <span className={styles.label}>Home</span>
         </NavLink>
-        <NavLink
-          to="/sach"
-          className={({ isActive }) =>
-            `${styles.item} ${isActive ? styles.active : ""}`
-          }
-        >
-          <BookOpen className={styles.icon} />
-          <span className={styles.label}>Sách</span>
-        </NavLink>
+        {["Quản lý", "Thủ thư", "Độc giả"].includes(user.vaiTro) && (
+          <NavLink
+            to="/sach"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <BookOpen className={styles.icon} />
+            <span className={styles.label}>Sách</span>
+          </NavLink>
+        )}
+        {/* Quản lý tài khoản — chỉ Quản lý */}
+        {user?.vaiTro === "Quản lý" && (
+          <NavLink
+            to="/admin/accounts"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <UserCog className={styles.icon} />
+            <span className={styles.label}>Quản lý tài khoản</span>
+          </NavLink>
+        )}
+
+        {/* Quản lý sách — Quản lý & Thủ thư */}
+        {["Quản lý", "Thủ thư"].includes(user?.vaiTro) && (
+          <NavLink
+            to="/admin/books"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <BookOpen className={styles.icon} />
+            <span className={styles.label}>Quản lý sách</span>
+          </NavLink>
+        )}
+
+        {/* Quản lý phiếu mượn trả — Quản lý & Thủ thư */}
+        {["Quản lý", "Thủ thư"].includes(user?.vaiTro) && (
+          <NavLink
+            to="/admin/loans"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <ClipboardList className={styles.icon} />
+            <span className={styles.label}>Quản lý mượn trả</span>
+          </NavLink>
+        )}
+
+        {/* Quản lý thủ thư — chỉ Quản lý */}
+        {user?.vaiTro === "Quản lý" && (
+          <NavLink
+            to="/admin/librarians"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <UserCheck className={styles.icon} />
+            <span className={styles.label}>Quản lý thủ thư</span>
+          </NavLink>
+        )}
+
+        {/* Quản lý độc giả — chỉ Quản lý */}
+        {["Quản lý", "Thủ thư"].includes(user?.vaiTro) && (
+          <NavLink
+            to="/admin/readers"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <Users className={styles.icon} />
+            <span className={styles.label}>Quản lý độc giả</span>
+          </NavLink>
+        )}
       </nav>
 
       <div className={styles.line1} />

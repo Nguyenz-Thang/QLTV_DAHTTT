@@ -9,6 +9,8 @@ import DefaultLayout from "../../Layouts/DefaultLayout";
 import ForgotPassword from "../../page/ForgotPassword";
 import ChangePassword from "../../page/ChangePassword";
 import Home from "../../page/Home";
+import Settings from "../../page/Settings";
+import MainContent from "../../page/MainContent";
 // import UseState from "@/pages/UseState";
 
 function AppRoutes() {
@@ -19,7 +21,7 @@ function AppRoutes() {
         <Routes>
           <Route
             path="/"
-            element={token ? <Navigate to="/sach" /> : <Navigate to="/login" />}
+            element={token ? <Navigate to="/home" /> : <Navigate to="/login" />}
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -30,8 +32,11 @@ function AppRoutes() {
             element={token ? <BookList /> : <Navigate to="/login" />}
           /> */}
           <Route element={token ? <DefaultLayout /> : <Navigate to="/login" />}>
-            <Route path="/sach" element={<BookList />} />
-            <Route path="/home" element={<Home />} />
+            <Route element={<MainContent />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/sach" element={<BookList />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
           </Route>
         </Routes>
       </div>

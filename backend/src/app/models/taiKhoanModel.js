@@ -8,7 +8,7 @@ async function findByUsername(username) {
     .request()
     .input("username", sql.NVarChar, username)
     .query(
-      "SELECT * FROM TaiKhoan t left join DocGia d on t.maDG = d.maDG WHERE t.tenDangNhap = @username"
+      "SELECT * FROM TaiKhoan t left join DocGia d on t.maDG = d.maDG left join ThuThu tt on tt.maTT = t.maTT WHERE t.tenDangNhap = @username"
     );
   return result.recordset[0] || null;
 }

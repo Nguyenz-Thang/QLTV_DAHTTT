@@ -30,7 +30,7 @@ export default function LoginPage() {
       // lưu vào context + localStorage
       login(data);
       // chuyển sang trang sách
-      nav("/sach");
+      nav("/home");
     } catch (error) {
       setLoading(false);
       setErr(error.message || "Lỗi mạng");
