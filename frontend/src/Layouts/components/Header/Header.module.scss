@@ -1,10 +1,13 @@
 .header {
   height: 56px;
   padding: 0 16px;
-  display: flex;
+
   align-items: center;
   background-color: #223771;
   color: #96aae0;
+  position: absolute;
+  display: flex;
+  width: 100%;
 }
 
 .content {

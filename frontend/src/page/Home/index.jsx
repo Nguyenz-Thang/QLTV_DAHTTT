@@ -1,9 +1,9 @@
 import styles from "./Home.module.scss";
+import { Outlet } from "react-router";
 function Home() {
   return (
     <div>
-      <p>Home</p>
-      <button>ok</button>
+      <h1>Helloooooooooooooooo !</h1>
     </div>
   );
 }

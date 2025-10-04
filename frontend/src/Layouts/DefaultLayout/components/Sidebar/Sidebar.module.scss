@@ -5,6 +5,7 @@
   --accent: #fd7e14;
 
   width: 240px;
+  max-height: 100vh;
   min-height: 100vh;
   position: sticky;
   top: 0;
@@ -13,8 +14,9 @@
   display: flex;
   flex-direction: column;
   padding: 10px 8px;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+  // box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+
+  position: relative;
 }
 
 .collapsed {
@@ -42,6 +44,7 @@
   padding: 4px;
   border-radius: 6px;
   cursor: pointer;
+  margin-top: 55px;
 }
 .toggle:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -67,12 +70,14 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 .item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  // background: rgba(255, 255, 255, 0.08);
+
+  color: #fd7e14;
 }
 .active {
-  background: rgba(253, 126, 20, 0.18);
-  color: #fff;
+  // background: rgba(253, 126, 20, 0.18);
+
+  color: #fd7e14;
 }
 
 .icon {
@@ -143,3 +148,5 @@
 // .collapsed .toggle {
 //   margin-left: auto;
 // }
+@media (max-width: 768px) {
+}
