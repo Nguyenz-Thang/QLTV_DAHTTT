@@ -20,6 +20,10 @@ const dbConfig = {
   },
 };
 
+if (process.env.DB_INSTANCE) {
+  dbConfig.options.instanceName = process.env.DB_INSTANCE;
+}
+
 let poolPromise = null;
 
 async function getPool() {

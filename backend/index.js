@@ -2,9 +2,14 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+
 dotenv.config();
 
 const sachRoutes = require("./src/app/routes/sachRoutes");
+const theLoaiRoutes = require("./src/app/routes/theLoaiRoutes");
+// const authRoutes = require("./src/app/routes/authRoutes");
+const phieuMuonRoutes = require("./src/app/routes/phieumuonRoutes");
+// const thuThuRoutes = require("./src/app/routes/thuthuRoutes");
 const { getPool } = require("./src/config/db");
 
 const app = express();
@@ -16,14 +21,14 @@ getPool().catch((err) => {
   console.error("Failed to connect DB on startup:", err.message);
   // you may choose to process.exit(1) here
 });
-const theLoaiRoutes = require('./src/app/routes/theLoaiRoutes');
+
 
 app.use(cors());
 app.use(express.json());
 app.use('/theloai', theLoaiRoutes);
 app.get("/", (req, res) => res.send("Library API running"));
 
-const authRoutes = require("../backend/src/app/routes/authRoutes");
+const authRoutes = require("./src/app/routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
 // Ví dụ bảo vệ route sách
