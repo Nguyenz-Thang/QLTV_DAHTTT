@@ -11,6 +11,7 @@ import ChangePassword from "../../page/ChangePassword";
 import Home from "../../page/Home";
 import Settings from "../../page/Settings";
 import MainContent from "../../page/MainContent";
+import BookAdminPage from "../../page/BookAdminPage";
 // import UseState from "@/pages/UseState";
 
 function AppRoutes() {
@@ -36,6 +37,7 @@ function AppRoutes() {
               <Route path="/home" element={<Home />} />
               <Route path="/sach" element={<BookList />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/admin/books" element={<BookAdminPage />} />
             </Route>
           </Route>
         </Routes>
