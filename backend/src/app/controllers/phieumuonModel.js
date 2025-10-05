@@ -46,10 +46,4 @@ async function deletePhieuMuon(req, res) {
     }
 }
 
-module.exports = {
-    getAllPhieuMuon,
-    getPhieuMuonById,
-    createPhieuMuon,
-    updatePhieuMuon,
-    deletePhieuMuon
-};
+module.exports = { getAllPhieuMuon, getPhieuMuonById, createPhieuMuon, updatePhieuMuon, deletePhieuMuon };
