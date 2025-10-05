@@ -31,6 +31,7 @@ const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
 const { authMiddleware } = require("./src/app/middleware/auth");
 app.use("/api/sach", sachRoutes);
+app.use("/api/phieumuon", phieuMuonRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
