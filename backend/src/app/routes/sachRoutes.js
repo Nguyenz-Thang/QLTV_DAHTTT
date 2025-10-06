@@ -55,7 +55,7 @@ router.put(
 router.delete(
   "/:maSach",
   authMiddleware,
-  roleMiddleware("Quản lý"),
+  roleMiddleware("Thủ thư", "Quản lý"),
   sach.remove
 );
 

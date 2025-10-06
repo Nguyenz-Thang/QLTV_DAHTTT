@@ -74,11 +74,6 @@
 
   color: #fd7e14;
 }
-.active {
-  // background: rgba(253, 126, 20, 0.18);
-
-  color: #fd7e14;
-}
 
 .icon {
   flex: 0 0 auto;
@@ -149,4 +144,63 @@
 //   margin-left: auto;
 // }
 @media (max-width: 768px) {
+}
+/* Group & Sub menu */
+.group {
+  display: flex;
+  flex-direction: column;
+}
+.groupHeader {
+  position: relative;
+  width: 100%;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.collapsed .chev {
+}
+.chev {
+  margin-left: auto;
+  display: inline-flex;
+}
+
+.sub {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.subOpen {
+  max-height: 300px;
+} /* đủ lớn để chứa 4 mục */
+.subCollapsed {
+  display: none;
+} /* khi sidebar thu gọn */
+
+.subItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px 0 42px; /* thụt vào dưới parent */
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--txt);
+  transition: color 0.15s ease;
+}
+.subItem:hover {
+  color: var(--accent);
+}
+
+.iconSm {
+  width: 16px;
+  height: 16px;
+}
+.expanded .chev {
+  transform: rotate(0deg);
+}
+.active {
+  // background: rgba(253, 126, 20, 0.18);
+
+  color: #fd7e14;
 }

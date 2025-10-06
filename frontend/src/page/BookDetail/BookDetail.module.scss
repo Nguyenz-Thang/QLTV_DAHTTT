@@ -1,0 +1,282 @@
+.tab {
+  background-color: #fff;
+  width: 100%;
+  height: 50px;
+  box-shadow: 0 0 10px #b3bfff;
+  display: flex;
+}
+.tab .nd {
+  margin-left: 30px;
+  margin-top: 18px;
+  display: block;
+  font-weight: 500;
+}
+.item {
+  text-decoration: none;
+}
+.page {
+  padding: 16px;
+}
+
+/* ----- book header ----- */
+.hero {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 14px;
+  background: linear-gradient(135deg, #f3f6ff, #e2e9ff);
+  border: 1px solid #e5e9ff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 26px rgba(34, 55, 113, 0.08);
+}
+.cover {
+  width: 90px;
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #dde6ff, #cfd8ff);
+  display: grid;
+  place-items: center;
+  color: #223771;
+}
+.info {
+  min-width: 0;
+}
+.title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: #223771;
+}
+.desc {
+  margin: 0;
+  color: #3f4e88;
+  font-size: 14px;
+}
+.meta {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill {
+  font-size: 12px;
+  color: #3f4e88;
+  background: #eef2ff;
+  border: 1px solid #dfe7ff;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.download {
+  margin-top: 10px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  background: #223771;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid #223771;
+}
+.download:hover {
+  background: #fd7e14;
+  border-color: #fd7e14;
+}
+
+/* ----- comments ----- */
+.comments {
+  margin-top: 18px;
+}
+.comments h2 {
+  margin: 0 0 10px;
+  color: #223771;
+}
+
+.editor {
+  background: #fff;
+  border: 1px solid #e6eaff;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 26px rgba(34, 55, 113, 0.06);
+}
+.editor textarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: vertical;
+  min-height: 70px;
+  font-size: 14px;
+  color: #223771;
+}
+.primary {
+  margin-top: 8px;
+  background: #223771;
+  color: #fff;
+  border: 0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.primary:hover {
+  background: #fd7e14;
+}
+
+.loading,
+.error,
+.empty {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+}
+.error {
+  background: #ffeaea;
+  color: #b00020;
+}
+.loading {
+  background: #f6f8ff;
+  color: #223771;
+}
+.empty {
+  background: #f6f8ff;
+  color: #3f4e88;
+}
+
+.list {
+  margin-top: 8px;
+}
+.item {
+  margin-bottom: 10px;
+}
+.row {
+  display: flex;
+  gap: 10px;
+}
+.avatarImg {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.body {
+  flex: 1;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.author {
+  font-weight: 700;
+  color: #223771;
+}
+.time {
+  font-size: 12px;
+  color: #7a86bf;
+  margin-left: 4px;
+}
+
+.content {
+  margin: 4px 0 6px;
+  color: #2d356c;
+}
+
+/* actions under each comment */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.ghost {
+  background: transparent;
+  border: 0;
+  color: #5562a6;
+  cursor: pointer;
+  padding: 0;
+}
+.ghost:hover {
+  color: #223771;
+}
+.danger {
+  background: transparent;
+  border: 0;
+  color: #b00020;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* inline editors */
+.inlineEditor {
+  margin-top: 6px;
+}
+.inlineEditor textarea {
+  width: 100%;
+  border: 1px solid #e1e6ff;
+  border-radius: 8px;
+  padding: 6px;
+  resize: vertical;
+  font-size: 14px;
+  color: #223771;
+}
+
+/* three-dots menu */
+.menuWrap {
+  position: relative;
+  //   margin-left: auto;
+}
+.menuBtn {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+  color: #7a86bf;
+  border-radius: 8px;
+}
+.menuBtn:hover {
+  background: rgba(34, 55, 113, 0.06);
+  color: #223771;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid #e6eaff;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(34, 55, 113, 0.12);
+  padding: 6px;
+  z-index: 5;
+  min-width: 140px;
+}
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 4;
+}
+.menuItem,
+.menuItemDanger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #223771;
+}
+.menuItem:hover {
+  background: #f3f6ff;
+}
+.menuItemDanger {
+  color: #b00020;
+}
+.menuItemDanger:hover {
+  background: #ffecee;
+}

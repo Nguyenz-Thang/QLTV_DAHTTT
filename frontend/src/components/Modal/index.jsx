@@ -37,6 +37,9 @@ function Modal({
   return (
     <div className={styles.modal}>
       <div className={styles.content}>
+        <button className={styles.closeBtn} onClick={handleRequestClose}>
+          &times;
+        </button>
         <div className={styles.body}>{children}</div>
       </div>
       <div className={styles.overlay} onClick={handleRequestClose} />
