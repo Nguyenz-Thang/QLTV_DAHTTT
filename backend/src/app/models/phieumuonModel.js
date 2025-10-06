@@ -1,66 +1,52 @@
-const sql = require('mssql');
-const dbConfig = require('../../config/db');
+const { getPool } = require("../../config/db");
 
-async function getAllPhieuMuon() {
-    try {
-        const pool = await sql.connect(dbConfig);
-        const result = await pool.request().query(`
-            SELECT 
-                pm.maPM, pm.ngayMuon, pm.ngayHenTra,
-                dg.hoTen AS tenDocGia, dg.email AS emailDocGia,
-                tt.tenTT AS tenThuThu,
-                ctm.maSach, s.tieuDe AS tenSach, ctm.soLuong, ctm.trangThai
-            FROM PhieuMuon pm
-            INNER JOIN DocGia dg ON pm.maDG = dg.maDG
-            INNER JOIN ThuThu tt ON pm.maTT = tt.maTT
-            INNER JOIN ChiTietPhieuMuon ctm ON pm.maPM = ctm.maPM
-            INNER JOIN Sach s ON ctm.maSach = s.maSach
-            ORDER BY pm.ngayMuon DESC
-        `);
-        return result.recordset;
-    } catch (error) {
-        console.error('Lỗi getAllPhieuMuon:', error);
-        throw error;
-    }
+// Lấy danh sách phiếu mượn
+async function getAll() {
+  const pool = await getPool();
+  const result = await pool.request().query("SELECT * FROM PhieuMuon");
+  return result.recordset;
 }
 
-async function createPhieuMuon(data) {
-    try {
-        const pool = await sql.connect(dbConfig);
-        const transaction = new sql.Transaction(pool);
-        await transaction.begin();
-
-        // Tạo PhieuMuon
-        const maPM = `PM${Date.now()}`;
-        await transaction.request()
-            .input('maPM', sql.VarChar(20), maPM)
-            .input('maDG', sql.VarChar(20), data.maDG)
-            .input('maTT', sql.VarChar(20), data.maTT)
-            .query('INSERT INTO PhieuMuon (maPM, maDG, maTT) VALUES (@maPM, @maDG, @maTT)');
-
-        // Tạo ChiTietPhieuMuon và cập nhật soLuongMuon
-        for (const item of data.chiTiet) {
-            const maCTM = `CTM${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
-            await transaction.request()
-                .input('maCTM', sql.VarChar(20), maCTM)
-                .input('maPM', sql.VarChar(20), maPM)
-                .input('maSach', sql.VarChar(20), item.maSach)
-                .input('soLuong', sql.Int, item.soLuong)
-                .query('INSERT INTO ChiTietPhieuMuon (maCTM, maPM, maSach, soLuong) VALUES (@maCTM, @maPM, @maSach, @soLuong)');
-
-            // Cập nhật sách
-            await transaction.request()
-                .input('maSach', sql.VarChar(20), item.maSach)
-                .input('soLuong', sql.Int, item.soLuong)
-                .query('UPDATE Sach SET soLuongMuon = soLuongMuon + @soLuong WHERE maSach = @maSach');
-        }
-
-        await transaction.commit();
-        return { success: true, maPM };
-    } catch (error) {
-        await transaction.rollback();
-        throw error;
-    }
+// Thêm phiếu mượn
+async function create(data) {
+  const pool = await getPool();
+  await pool.request()
+    .input("maPM", data.maPM)
+    .input("maDG", data.maDG)
+    .input("maSach", data.maSach)
+    .input("ngayMuon", data.ngayMuon)
+    .input("ngayTra", data.ngayTra)
+    .query(`
+      INSERT INTO PhieuMuon (maPM, maDG, maSach, ngayMuon, ngayTra)
+      VALUES (@maPM, @maDG, @maSach, @ngayMuon, @ngayTra)
+    `);
+  return { message: "Thêm phiếu mượn thành công" };
 }
 
-module.exports = { getAllPhieuMuon, createPhieuMuon };
+// Xoá phiếu mượn
+async function remove(maPM) {
+  const pool = await getPool();
+  const result = await pool.request()
+    .input("maPM", maPM)
+    .query("DELETE FROM PhieuMuon WHERE maPM = @maPM");
+  return result.rowsAffected[0] > 0;
+}
+
+// Cập nhật phiếu mượn
+async function update(maPM, data) {
+  const pool = await getPool();
+  await pool.request()
+    .input("maPM", maPM)
+    .input("maDG", data.maDG)
+    .input("maSach", data.maSach)
+    .input("ngayMuon", data.ngayMuon)
+    .input("ngayTra", data.ngayTra)
+    .query(`
+      UPDATE PhieuMuon
+      SET maDG=@maDG, maSach=@maSach, ngayMuon=@ngayMuon, ngayTra=@ngayTra
+      WHERE maPM=@maPM
+    `);
+  return { message: "Cập nhật phiếu mượn thành công" };
+}
+
+module.exports = { getAll, create, remove, update };
