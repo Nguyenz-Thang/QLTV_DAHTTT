@@ -25,6 +25,8 @@ app.get("/", (req, res) => res.send("Library API running"));
 
 const authRoutes = require("../backend/src/app/routes/authRoutes");
 app.use("/api/auth", authRoutes);
+const docGiaRoutes = require("./src/app/routes/docGiaRoutes");
+app.use("/docgia", docGiaRoutes);
 
 // Ví dụ bảo vệ route sách
 const path = require("path");
