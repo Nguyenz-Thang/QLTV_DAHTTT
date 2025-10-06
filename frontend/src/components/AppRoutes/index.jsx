@@ -12,6 +12,15 @@ import Home from "../../page/Home";
 import Settings from "../../page/Settings";
 import MainContent from "../../page/MainContent";
 import BookAdminPage from "../../page/BookAdminPage";
+import NXB from "../../page/NXB";
+import Categories from "../../page/Categories";
+import Authors from "../../page/Authors";
+import PhieuMuon from "../../page/PhieuMuon";
+import PhieuTra from "../../page/PhieuTra";
+import ThuThu from "../../page/ThuThu";
+import DocGia from "../../page/DocGia";
+import Accounts from "../../page/Accounts";
+import BookDetail from "../../page/BookDetail";
 // import UseState from "@/pages/UseState";
 
 function AppRoutes() {
@@ -38,6 +47,15 @@ function AppRoutes() {
               <Route path="/sach" element={<BookList />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin/books" element={<BookAdminPage />} />
+              <Route path="/admin/nxb" element={<NXB />} />
+              <Route path="/admin/categories" element={<Categories />} />
+              <Route path="/admin/authors" element={<Authors />} />
+              <Route path="/admin/phieu-muon" element={<PhieuMuon />} />
+              <Route path="/admin/phieu-tra" element={<PhieuTra />} />
+              <Route path="/admin/thuthu" element={<ThuThu />} />
+              <Route path="/admin/docgia" element={<DocGia />} />
+              <Route path="/admin/accounts" element={<Accounts />} />
+              <Route path="/sach/:maSach" element={<BookDetail />} />
             </Route>
           </Route>
         </Routes>
