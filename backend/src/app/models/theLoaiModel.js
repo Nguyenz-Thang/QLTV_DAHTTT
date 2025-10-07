@@ -32,15 +32,13 @@ async function create({ tenTL, moTa }) {
     .request()
     .input("maTL", sql.VarChar, newMaTL)
     .input("tenTL", sql.NVarChar, tenTL)
-    .input("moTa", sql.NVarChar, moTa)
-    .query(`
+    .input("moTa", sql.NVarChar, moTa).query(`
       INSERT INTO TheLoai (maTL, tenTL, moTa)
       VALUES (@maTL, @tenTL, @moTa)
     `);
 
   return { maTL: newMaTL, tenTL, moTa, message: "Thêm thể loại thành công" };
 }
-
 
 // 🟡 Cập nhật thể loại (có kiểm tra tồn tại)
 async function update(maTL, { tenTL, moTa }) {
@@ -61,8 +59,7 @@ async function update(maTL, { tenTL, moTa }) {
     .request()
     .input("maTL", sql.VarChar, maTL)
     .input("tenTL", sql.NVarChar, tenTL)
-    .input("moTa", sql.NVarChar, moTa)
-    .query(`
+    .input("moTa", sql.NVarChar, moTa).query(`
       UPDATE TheLoai
       SET tenTL = @tenTL, moTa = @moTa
       WHERE maTL = @maTL
@@ -70,8 +67,6 @@ async function update(maTL, { tenTL, moTa }) {
 
   return { maTL, tenTL, moTa, message: "Cập nhật thể loại thành công" };
 }
-
-
 
 // 🔴 Xóa thể loại (kiểm tra tồn tại trước khi xóa)
 async function remove(maTL) {
@@ -96,14 +91,12 @@ async function remove(maTL) {
   return { message: "Xóa thể loại thành công" };
 }
 
-
 // 🔍 Tìm kiếm thể loại
 async function search(keyword) {
   const pool = await getPool();
   const result = await pool
     .request()
-    .input("keyword", sql.NVarChar, `%${keyword}%`)
-    .query(`
+    .input("keyword", sql.NVarChar, `%${keyword}%`).query(`
       SELECT * FROM TheLoai 
       WHERE tenTL LIKE @keyword OR moTa LIKE @keyword
     `);
