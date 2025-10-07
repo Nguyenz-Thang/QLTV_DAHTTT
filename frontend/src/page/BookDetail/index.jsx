@@ -166,7 +166,7 @@ export default function BookDetail() {
           <NavLink to="/sach" className={styles.item}>
             <span>Sách </span>
           </NavLink>
-          <span>- Chi tiết sách</span>
+          <span className={styles.ct}>- Chi tiết sách</span>
         </div>
       </div>
       <div className={styles.page}>

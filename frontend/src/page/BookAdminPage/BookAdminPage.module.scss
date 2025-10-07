@@ -4,12 +4,15 @@
   height: 50px;
   box-shadow: 0 0 10px #b3bfff;
 }
+
+/* Khung trang giống Categories */
 .page {
   padding: 16px;
-  background-color: #fff;
+  background: #fff;
   margin: 20px;
   border-radius: 20px;
-  box-shadow: 0 0 5px #98a5f0;
+  border: 1px solid #eef1ff;
+  box-shadow: 0 10px 30px rgba(34, 55, 113, 0.08);
 }
 
 .header {
@@ -19,93 +22,122 @@
   margin-bottom: 12px;
 }
 
-.cancel {
-  background-color: brown;
-  color: #fff;
-  border: 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  &:hover {
-    background-color: red;
-  }
-}
 .primary {
   background-color: #223771;
   color: #fff;
   border: 0;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
 }
+.primary:hover {
+  background: #fd7e14;
+}
+
+.cancel {
+  background-color: #8d3b3b;
+  color: #fff;
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.cancel:hover {
+  background-color: #c0392b;
+}
+
 .search {
   border: none;
   background: none;
   cursor: pointer;
 }
 
-.primary:hover {
-  background: #fd7e14;
-}
-
+/* Bảng giống Categories: có viền, bo góc, header nhạt */
 .table {
   width: 100%;
   border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #eef1ff;
+  border-radius: 12px;
+  overflow: hidden;
 }
-.table th {
-  font-weight: 500;
-  background-color: beige;
+.table thead th {
+  background: #f6f8ff;
+  color: #223771;
+  font-weight: 600;
+  text-align: left;
 }
 .table th,
 .table td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f3ff;
 }
-.table tr:hover {
-  background-color: #d8d8d8;
+.table tbody tr:hover {
+  background: #f9fbff; /* nhẹ hơn màu xám cũ cho đồng bộ */
 }
-.edit {
-  margin-right: 6px;
-  background: none;
-  border: none;
+
+/* Nút thao tác giống bên Categories */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.edit,
+.delete {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eef2ff;
+  border: 1px solid #dfe7ff;
   color: #223771;
   cursor: pointer;
 }
+.edit:hover {
+  background: #ffd38f;
+  border-color: #fd7e14;
+}
 .delete {
-  margin-right: 6px;
-  background: none;
-  border: none;
-  color: red;
-  cursor: pointer;
+  color: #b00020;
+}
+.delete:hover {
+  background: #ffe1e1;
+  border-color: #ffb3b3;
 }
 
+/* Form giống Categories */
 .form {
   margin-top: 12px;
   background: #fff;
-  border: 1px solid #eee;
+  border: 1px solid #e6eaff;
   border-radius: 12px;
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: 0 8px 26px rgba(34, 55, 113, 0.06);
 }
+
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+
 .form input,
 .form input[type="number"],
 .form textarea,
 .form select {
   border: 1px solid #ccd5f0;
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 8px 10px;
   width: 100%;
   box-sizing: border-box;
+  background: #fff;
+  color: #223771;
 }
 .form input:focus,
 .form textarea:focus,
@@ -114,12 +146,8 @@
   border-color: #fd7e14;
   box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.15);
 }
+
 .current {
   font-size: 12px;
-  color: #555;
-}
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  color: #3f4e88;
 }

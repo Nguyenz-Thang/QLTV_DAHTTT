@@ -1,45 +1,54 @@
-const PhieuMuon = require("../models/phieuMuonModel");
+const PM = require("../models/phieuMuonModel");
 
-// GET /api/phieumuon
-async function getPhieuMuon(req, res) {
+exports.getPhieuMuon = async (req, res) => {
   try {
-    const data = await PhieuMuon.getAll();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const data = await PM.listAll(req.query.q || "");
+    res.json({ success: true, data });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Lỗi lấy danh sách phiếu mượn" });
   }
-}
+};
 
-// POST /api/phieumuon
-async function createPhieuMuon(req, res) {
+exports.createPhieuMuon = async (req, res) => {
   try {
-    const result = await PhieuMuon.create(req.body);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { maDG, maTT, items } = req.body || {};
+    if (!maDG || !maTT)
+      return res.status(400).json({ message: "Thiếu độc giả hoặc thủ thư" });
+    if (!Array.isArray(items) || !items.length)
+      return res.status(400).json({ message: "Thiếu chi tiết mượn" });
+    const r = await PM.create(req.body);
+    res.json({
+      success: true,
+      message: "Tạo phiếu mượn thành công",
+      maPM: r.maPM,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ message: e.message || "Lỗi tạo phiếu mượn" });
   }
-}
+};
 
-// DELETE /api/phieumuon/:id
-async function deletePhieuMuon(req, res) {
+exports.updatePhieuMuon = async (req, res) => {
   try {
-    const success = await PhieuMuon.remove(req.params.id);
-    if (!success)
+    const ok = await PM.update(req.params.id, req.body || {});
+    if (!ok)
       return res.status(404).json({ message: "Không tìm thấy phiếu mượn" });
-    res.json({ message: "Đã xoá phiếu mượn" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ success: true, message: "Cập nhật phiếu mượn thành công" });
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ message: e.message || "Lỗi cập nhật phiếu mượn" });
   }
-}
+};
 
-// PUT /api/phieumuon/:id
-async function updatePhieuMuon(req, res) {
+exports.deletePhieuMuon = async (req, res) => {
   try {
-    const result = await PhieuMuon.update(req.params.id, req.body);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const ok = await PM.remove(req.params.id);
+    if (!ok)
+      return res.status(404).json({ message: "Không tìm thấy phiếu mượn" });
+    res.json({ success: true, message: "Đã xoá phiếu mượn" });
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ message: e.message || "Không thể xoá" });
   }
-}
-
-module.exports = { getPhieuMuon, createPhieuMuon, deletePhieuMuon, updatePhieuMuon };
+};
