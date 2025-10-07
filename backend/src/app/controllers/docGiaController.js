@@ -51,7 +51,7 @@ exports.delete = async (req, res) => {
     await DocGia.delete(id);
     res.status(200).json({ message: "Xóa độc giả thành công" });
   } catch (err) {
-    console.error("❌ Lỗi khi xóa độc giả:", err.message);
+    console.error("Lỗi khi xóa độc giả:", err.message);
 
     if (err.message.includes("REFERENCE")) {
       return res.status(400).json({
