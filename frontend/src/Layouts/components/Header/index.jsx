@@ -13,7 +13,7 @@ function Header() {
     <>
       <header className={styles.header}>
         <div className={styles.content} onClick={() => setIsOpen(true)}>
-          {user && (
+          {/* {user && (
             <img
               id={styles.avt}
               src={`https://ui-avatars.com/api/?name=${user.hoTen}&background=random`}
@@ -22,7 +22,7 @@ function Header() {
           )}
 
           {user ? `${user.hoTen}` : "Xin chào, Khách"}
-          <ChevronDown />
+          <ChevronDown /> */}
         </div>
       </header>
       <Modal

@@ -95,90 +95,93 @@ export default function BookListPage() {
   }, [q, maTL, books, mapTL]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h2>Thư viện sách</h2>
+    <>
+      <div className={styles.tab}></div>
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <h2>Thư viện sách</h2>
 
-        <div className={styles.filters}>
-          <div className={styles.searchBox}>
-            <Search className={styles.searchIcon} />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Tìm theo tiêu đề, tác giả, thể loại…"
-            />
-            {q && (
-              <button
-                className={styles.clear}
-                onClick={() => setQ("")}
-                aria-label="Xóa tìm kiếm"
-              >
-                ×
-              </button>
-            )}
-          </div>
+          <div className={styles.filters}>
+            <div className={styles.searchBox}>
+              <Search className={styles.searchIcon} />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Tìm theo tiêu đề, tác giả, thể loại…"
+              />
+              {q && (
+                <button
+                  className={styles.clear}
+                  onClick={() => setQ("")}
+                  aria-label="Xóa tìm kiếm"
+                >
+                  ×
+                </button>
+              )}
+            </div>
 
-          <select
-            className={styles.select}
-            value={maTL}
-            onChange={(e) => setMaTL(e.target.value)}
-          >
-            <option value="">Tất cả thể loại</option>
-            {theLoai.map((t) => (
-              <option key={t.maTL} value={t.maTL}>
-                {t.tenTL}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {loading && <div className={styles.loading}>Đang tải danh sách…</div>}
-      {err && !loading && <div className={styles.error}>{err}</div>}
-      {!loading && !err && filtered.length === 0 && (
-        <div className={styles.empty}>Không tìm thấy sách phù hợp.</div>
-      )}
-
-      {!loading && !err && filtered.length > 0 && (
-        <div className={styles.grid}>
-          {filtered.map((b) => (
-            <article
-              key={b.maSach}
-              className={styles.card}
-              onClick={() => nav(`/sach/${b.maSach}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && nav(`/sach/${b.maSach}`)}
+            <select
+              className={styles.select}
+              value={maTL}
+              onChange={(e) => setMaTL(e.target.value)}
             >
-              <div className={styles.cover}>
-                <BookOpen />
-              </div>
+              <option value="">Tất cả thể loại</option>
+              {theLoai.map((t) => (
+                <option key={t.maTL} value={t.maTL}>
+                  {t.tenTL}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-              <div className={styles.info}>
-                <h3 className={styles.title} title={b.tieuDe}>
-                  {b.tieuDe}
-                </h3>
-                <div className={styles.meta}>
-                  {b.tenTG && (
-                    <span className={styles.pill}>Tác giả: {b.tenTG}</span>
-                  )}
-                  {(b.tenTL || mapTL[b.maTL]) && (
-                    <span className={styles.pill}>
-                      Thể loại: {b.tenTL || mapTL[b.maTL]}
-                    </span>
-                  )}
-                  {b.tenNXB && (
-                    <span className={styles.pill}>NXB: {b.tenNXB}</span>
-                  )}
+        {loading && <div className={styles.loading}>Đang tải danh sách…</div>}
+        {err && !loading && <div className={styles.error}>{err}</div>}
+        {!loading && !err && filtered.length === 0 && (
+          <div className={styles.empty}>Không tìm thấy sách phù hợp.</div>
+        )}
+
+        {!loading && !err && filtered.length > 0 && (
+          <div className={styles.grid}>
+            {filtered.map((b) => (
+              <article
+                key={b.maSach}
+                className={styles.card}
+                onClick={() => nav(`/sach/${b.maSach}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && nav(`/sach/${b.maSach}`)}
+              >
+                <div className={styles.cover}>
+                  <BookOpen />
                 </div>
-                {/* <div className={styles.stock}>
+
+                <div className={styles.info}>
+                  <h3 className={styles.title} title={b.tieuDe}>
+                    {b.tieuDe}
+                  </h3>
+                  <div className={styles.meta}>
+                    {b.tenTG && (
+                      <span className={styles.pill}>Tác giả: {b.tenTG}</span>
+                    )}
+                    {(b.tenTL || mapTL[b.maTL]) && (
+                      <span className={styles.pill}>
+                        Thể loại: {b.tenTL || mapTL[b.maTL]}
+                      </span>
+                    )}
+                    {b.tenNXB && (
+                      <span className={styles.pill}>NXB: {b.tenNXB}</span>
+                    )}
+                  </div>
+                  {/* <div className={styles.stock}>
                   SL: <b>{b.soLuong ?? 0}</b>
                 </div> */}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
