@@ -16,8 +16,7 @@ const DocGia = {
     const check = await pool
       .request()
       .input("MSV", sql.VarChar, data.MSV)
-      .input("email", sql.NVarChar, data.email)
-      .query(`
+      .input("email", sql.NVarChar, data.email).query(`
         SELECT * FROM DocGia
         WHERE MSV = @MSV OR email = @email
       `);
@@ -27,12 +26,14 @@ const DocGia = {
     }
 
     // 🔹 Sinh mã DGxx tự động
-    const last = await pool.request().query("SELECT TOP 1 maDG FROM DocGia ORDER BY maDG DESC");
+    const last = await pool
+      .request()
+      .query("SELECT TOP 1 maDG FROM DocGia ORDER BY maDG DESC");
     let newId = "DG01";
     if (last.recordset.length > 0) {
       const lastId = last.recordset[0].maDG;
       const next = parseInt(lastId.replace("DG", "")) + 1;
-      newId = "DG" + next.toString().padStart(2, "0");
+      newId = "DG" + next.toString().padStart(10, "0");
     }
 
     // 🔹 Thêm độc giả
@@ -47,8 +48,7 @@ const DocGia = {
       .input("khoa", sql.NVarChar, data.khoa)
       .input("email", sql.NVarChar, data.email)
       .input("SDT", sql.VarChar, data.SDT)
-      .input("diaChi", sql.NVarChar, data.diaChi)
-      .query(`
+      .input("diaChi", sql.NVarChar, data.diaChi).query(`
         INSERT INTO DocGia (maDG, MSV, hoTen, gioiTinh, ngaySinh, lop, khoa, email, SDT, diaChi)
         VALUES (@maDG, @MSV, @hoTen, @gioiTinh, @ngaySinh, @lop, @khoa, @email, @SDT, @diaChi)
       `);
@@ -64,8 +64,7 @@ const DocGia = {
       .request()
       .input("MSV", sql.VarChar, data.MSV)
       .input("email", sql.NVarChar, data.email)
-      .input("maDG", sql.VarChar, id)
-      .query(`
+      .input("maDG", sql.VarChar, id).query(`
         SELECT * FROM DocGia
         WHERE (MSV = @MSV OR email = @email) AND maDG <> @maDG
       `);
@@ -74,7 +73,10 @@ const DocGia = {
       throw new Error("MSV hoặc email đã tồn tại ở độc giả khác");
     }
 
-    const current = await pool.request().input("maDG", sql.VarChar, id).query("SELECT * FROM DocGia WHERE maDG=@maDG");
+    const current = await pool
+      .request()
+      .input("maDG", sql.VarChar, id)
+      .query("SELECT * FROM DocGia WHERE maDG=@maDG");
     if (current.recordset.length === 0) {
       throw new Error("Không tìm thấy độc giả để cập nhật");
     }
@@ -104,8 +106,7 @@ const DocGia = {
       .input("khoa", sql.NVarChar, data.khoa)
       .input("email", sql.NVarChar, data.email)
       .input("SDT", sql.VarChar, data.SDT)
-      .input("diaChi", sql.NVarChar, data.diaChi)
-      .query(`
+      .input("diaChi", sql.NVarChar, data.diaChi).query(`
         UPDATE DocGia
         SET MSV=@MSV, hoTen=@hoTen, gioiTinh=@gioiTinh, ngaySinh=@ngaySinh,
             lop=@lop, khoa=@khoa, email=@email, SDT=@SDT, diaChi=@diaChi
@@ -118,7 +119,10 @@ const DocGia = {
   // 🔴 Xóa độc giả
   delete: async (id) => {
     const pool = await getPool();
-    await pool.request().input("maDG", sql.VarChar, id).query("DELETE FROM DocGia WHERE maDG=@maDG");
+    await pool
+      .request()
+      .input("maDG", sql.VarChar, id)
+      .query("DELETE FROM DocGia WHERE maDG=@maDG");
   },
 
   // 🔍 Tìm kiếm
@@ -126,8 +130,7 @@ const DocGia = {
     const pool = await getPool();
     const result = await pool
       .request()
-      .input("keyword", sql.NVarChar, `%${keyword}%`)
-      .query(`
+      .input("keyword", sql.NVarChar, `%${keyword}%`).query(`
         SELECT * FROM DocGia
         WHERE hoTen LIKE @keyword OR MSV LIKE @keyword OR khoa LIKE @keyword OR lop LIKE @keyword OR email LIKE @keyword
       `);

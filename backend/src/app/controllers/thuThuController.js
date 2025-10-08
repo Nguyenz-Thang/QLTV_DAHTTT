@@ -11,7 +11,14 @@ async function getThuThu(req, res) {
 
 async function createThuThu(req, res) {
   try {
-    const result = await ThuThu.create(req.body);
+    let newId = "TT001";
+
+    newId = "TT" + Date.now();
+
+    // Gán vào body để lưu
+    const newThuThu = { ...req.body, maTT: newId };
+
+    const result = await ThuThu.create(newThuThu);
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });

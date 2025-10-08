@@ -44,6 +44,8 @@ const accountsRoutes = require("./src/app/routes/accountsRoutes");
 app.use("/api/accounts", accountsRoutes);
 const tacGiaRoutes = require("./src/app/routes/tacGiaRoutes");
 app.use("/api/tacgia", tacGiaRoutes);
+const binhLuanRoutes = require("./src/app/routes/binhLuanRoutes");
+app.use("/api/binhluan", binhLuanRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
