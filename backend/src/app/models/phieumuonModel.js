@@ -333,7 +333,7 @@ async function suggest(q = "") {
   // Có thể tính thêm còn nợ ở đây nếu cần cho UI:
   return rs.recordset.map((r) => ({
     ...r,
-    conNo: Math.max((r.tongMuon || 0) - (r.tongTra || 0), 0),
+    tongNo: Math.max((r.tongMuon || 0) - (r.tongTra || 0), 0),
   }));
 }
 
