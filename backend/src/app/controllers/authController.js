@@ -62,6 +62,7 @@ async function login(req, res) {
       tenDangNhap: user.tenDangNhap,
       vaiTro: user.vaiTro,
       hoTen: user.hoTen || user.tenTT || "Chưa có thông tin",
+      maTT: user.maTT[0],
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 

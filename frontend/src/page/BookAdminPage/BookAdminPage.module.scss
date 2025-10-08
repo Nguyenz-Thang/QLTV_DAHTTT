@@ -4,8 +4,24 @@
   height: 50px;
   box-shadow: 0 0 10px #b3bfff;
 }
+.nd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding-left: 40px;
+  padding-top: 14px;
+}
 
-/* Khung trang giống Categories */
+.icon {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+.ct {
+  font-weight: 500;
+}
+
 .page {
   padding: 16px;
   background: #fff;
@@ -77,7 +93,10 @@
 .table tbody tr:hover {
   background: #f9fbff; /* nhẹ hơn màu xám cũ cho đồng bộ */
 }
-
+.quantity {
+  font-weight: 500;
+  color: #fd7e14;
+}
 /* Nút thao tác giống bên Categories */
 .actions {
   display: flex;

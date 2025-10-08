@@ -52,3 +52,28 @@ exports.deletePhieuMuon = async (req, res) => {
     res.status(400).json({ message: e.message || "Không thể xoá" });
   }
 };
+// NEW: suggest theo maPM / MSSV / tên
+exports.suggest = async (req, res) => {
+  try {
+    const q = (req.query.q || "").toString().trim();
+    // Nếu muốn tránh spam: q < 2 ký tự thì trả [] nhưng vẫn 200
+    if (q.length < 2) return res.json({ data: [] });
+
+    const data = await PM.suggest(q);
+    return res.json({ data });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+// NEW: danh sách sách còn nợ của 1 PM
+exports.remaining = async (req, res) => {
+  try {
+    const maPM = req.params.maPM;
+    const data = await PM.remaining(maPM);
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};

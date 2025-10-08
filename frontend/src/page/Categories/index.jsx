@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Categories.module.scss";
 import { useTheLoaiApi } from "../../api/theLoaiApi";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, ChevronRight } from "lucide-react";
 import Modal from "../../components/Modal";
 
 export default function Categories() {
@@ -73,7 +73,13 @@ export default function Categories() {
 
   return (
     <>
-      <div className={styles.tab}></div>
+      <div className={styles.tab}>
+        <div className={styles.nd}>
+          <span className={styles.item}>Quản lý sách</span>
+          <ChevronRight className={styles.icon} />
+          <span className={styles.ct}>Thể loại</span>
+        </div>
+      </div>
       <div className={styles.page}>
         <div className={styles.header}>
           <h2>Quản lý thể loại</h2>

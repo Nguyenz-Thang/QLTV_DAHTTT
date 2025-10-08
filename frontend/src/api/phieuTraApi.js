@@ -2,7 +2,7 @@ import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 const BASE = "http://localhost:5000/api/phieutra";
-
+const PM_BASE = "http://localhost:5000/api/phieumuon";
 async function asJson(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -61,5 +61,18 @@ export function usePhieuTraApi() {
     [authed]
   );
 
-  return { list, detail, create, remove };
+  // NEW: gợi ý phiếu mượn theo q (maPM / MSSV / tên)
+  const pmSuggest = useCallback(
+    async (q) =>
+      asJson(await authed(`${PM_BASE}/suggest?q=${encodeURIComponent(q)}`)),
+    [authed]
+  );
+
+  // NEW: danh sách sách còn nợ của 1 PM
+  const pmRemaining = useCallback(
+    async (maPM) => asJson(await authed(`${PM_BASE}/${maPM}/remaining`)),
+    [authed]
+  );
+
+  return { list, detail, create, remove, pmSuggest, pmRemaining };
 }

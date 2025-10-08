@@ -2,7 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "./Authors.module.scss";
 import Modal from "../../components/Modal";
 import { useTacGiaApi } from "../../api/tacGiaApi";
-import { Plus, Search, Pencil, Trash2, Save, X } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Save,
+  X,
+  ChevronRight,
+} from "lucide-react";
 
 export default function Authors() {
   const api = useTacGiaApi();
@@ -73,7 +81,13 @@ export default function Authors() {
 
   return (
     <>
-      <div className={styles.tab}></div>
+      <div className={styles.tab}>
+        <div className={styles.nd}>
+          <span className={styles.item}>Quản lý sách</span>
+          <ChevronRight className={styles.icon} />
+          <span className={styles.ct}>Tác giả</span>
+        </div>
+      </div>
 
       <div className={styles.page}>
         <div className={styles.header}>

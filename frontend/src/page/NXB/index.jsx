@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import styles from "./NXB.module.scss";
 import { useNxbApi } from "../../api/nxbApi";
 import Modal from "../../components/Modal";
-import { Plus, Search, Pencil, Trash2, Save } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Save, ChevronRight } from "lucide-react";
 
 export default function NXB() {
   const api = useNxbApi();
@@ -79,7 +79,13 @@ export default function NXB() {
 
   return (
     <>
-      <div className={styles.tab}></div>
+      <div className={styles.tab}>
+        <div className={styles.nd}>
+          <span className={styles.item}>Quản lý sách</span>
+          <ChevronRight className={styles.icon} />
+          <span className={styles.ct}>Nhà xuất bản</span>
+        </div>
+      </div>
       <div className={styles.page}>
         <div className={styles.header}>
           <h2>Quản lý nhà xuất bản</h2>
