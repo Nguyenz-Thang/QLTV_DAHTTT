@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSachApi } from "../../api/sachApi"; // 👈 dùng hook lấy token từ AuthContext bên trong
 import styles from "./BookAdminPage.module.scss";
-import { Download, TextSearch, SquarePen, Trash2 } from "lucide-react";
+import {
+  Download,
+  TextSearch,
+  SquarePen,
+  Trash2,
+  ChevronRight,
+} from "lucide-react";
 import Modal from "../../components/Modal";
 
 export default function BookAdminPage() {
@@ -67,7 +73,14 @@ export default function BookAdminPage() {
 
   return (
     <>
-      <div className={styles.tab}></div>
+      <div className={styles.tab}>
+        <div className={styles.nd}>
+          <span className={styles.item}>Quản lý sách</span>
+          <ChevronRight className={styles.icon} />
+          <span className={styles.ct}>Sách</span>
+        </div>
+      </div>
+
       <div className={styles.page}>
         <div className={styles.header}>
           <h2>Quản lý sách</h2>
@@ -90,6 +103,7 @@ export default function BookAdminPage() {
               <th>Tác giả</th>
               <th>NXB</th>
               <th>SL</th>
+              <th>SL đang mượn</th>
               <th>Tài liệu</th>
               <th>Thao tác</th>
             </tr>
@@ -103,6 +117,7 @@ export default function BookAdminPage() {
                 <td>{r.tenTG}</td>
                 <td>{r.tenNXB}</td>
                 <td>{r.soLuong}</td>
+                <td className={styles.quantity}>{r.soLuongMuon}</td>
                 <td>
                   {r.taiLieuOnl ? (
                     <a

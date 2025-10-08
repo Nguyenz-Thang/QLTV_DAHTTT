@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import styles from "./PhieuMuon.module.scss";
 import Modal from "../../components/Modal";
 import { usePhieuMuonApi } from "../../api/phieuMuonApi";
@@ -13,10 +13,14 @@ import {
   Minus,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
 } from "lucide-react";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function PhieuMuon() {
   const api = usePhieuMuonApi();
+  const { user } = useContext(AuthContext);
+
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -25,6 +29,12 @@ export default function PhieuMuon() {
   const [editing, setEditing] = useState(null); // null | {} | row (kèm items)
   const [saving, setSaving] = useState(false);
   const [meta, setMeta] = useState({ docGia: [], thuThu: [], sach: [] });
+
+  // chọn độc giả bằng 1 trong 2 cách: msv OR select
+  const [msv, setMsv] = useState("");
+  const [dgSelect, setDgSelect] = useState("");
+
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   const load = async () => {
     try {
@@ -41,6 +51,7 @@ export default function PhieuMuon() {
         docGia: (dg.data || dg || []).map((d) => ({
           id: d.maDG,
           name: d.hoTen,
+          msv: d.MSV || d.msv || "", // cần field MSV từ API độc giả
         })),
         thuThu: (tt.data || tt || []).map((t) => ({
           id: t.maTT,
@@ -67,22 +78,61 @@ export default function PhieuMuon() {
     return () => clearTimeout(t); /* eslint-disable-next-line */
   }, [q]);
 
-  const startCreate = () => setEditing({ items: [{ maSach: "", soLuong: 1 }] });
+  const startCreate = () =>
+    setEditing({
+      maDG: "",
+      maTT: user?.maTT || "", // auto thủ thư đăng nhập
+      ngayMuon: todayStr, // auto ngày hiện tại
+      ngayHenTra: "",
+      items: [{ maSach: "", soLuong: 1 }],
+    });
+
   const startEdit = (row) => {
-    // mở kèm chi tiết
     setEditing({
       ...row,
       items: row.items?.length ? row.items : [{ maSach: "", soLuong: 1 }],
     });
   };
 
+  // đồng bộ ô chọn Độc giả khi mở modal
+  useEffect(() => {
+    if (editing) {
+      setMsv("");
+      setDgSelect(editing.maDG || "");
+    }
+  }, [editing]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
+
+    // --- resolve maDG theo ưu tiên MSV ---
+    let maDGSubmit = dgSelect || "";
+    const msvInput = (msv || "").trim();
+    if (msvInput) {
+      const found = meta.docGia.find((d) => String(d.msv) === msvInput);
+      if (!found) {
+        alert("Không tìm thấy độc giả với MSV đã nhập.");
+        return;
+      }
+      maDGSubmit = found.id;
+    }
+    if (!maDGSubmit) return alert("Chọn độc giả hoặc nhập MSV hợp lệ.");
+
+    // --- thủ thư: tự set theo user đang đăng nhập ---
+    const maTTSubmit = user?.maTT || editing?.maTT || "";
+
+    // --- ngày mượn: mặc định hôm nay & bị disable nên không submit từ form ---
+    const ngayMuonSubmit = editing?.ngayMuon
+      ? editing.ngayMuon.length > 10
+        ? editing.ngayMuon
+        : `${editing.ngayMuon}T00:00:00.000Z`
+      : new Date().toISOString();
+
     const payload = {
-      maDG: f.get("maDG"),
-      maTT: f.get("maTT"),
-      ngayMuon: f.get("ngayMuon") || null,
+      maDG: maDGSubmit,
+      maTT: maTTSubmit,
+      ngayMuon: ngayMuonSubmit,
       ngayHenTra: f.get("ngayHenTra") || null,
       items: (editing.items || [])
         .map((it, idx) => ({
@@ -92,8 +142,7 @@ export default function PhieuMuon() {
         }))
         .filter((x) => x.maSach),
     };
-    if (!payload.maDG) return alert("Chọn độc giả");
-    if (!payload.maTT) return alert("Chọn thủ thư");
+
     if (!payload.items.length) return alert("Thêm ít nhất 1 sách");
 
     setSaving(true);
@@ -121,7 +170,13 @@ export default function PhieuMuon() {
 
   return (
     <>
-      <div className={styles.tab}></div>
+      <div className={styles.tab}>
+        <div className={styles.nd}>
+          <span className={styles.item}>Quản lý phiếu mượn trả</span>
+          <ChevronRight className={styles.icon} />
+          <span className={styles.ct}>Phiếu mượn</span>
+        </div>
+      </div>
       <div className={styles.page}>
         <div className={styles.header}>
           <h2>Quản lý phiếu mượn</h2>
@@ -191,40 +246,75 @@ export default function PhieuMuon() {
           <form className={styles.form} onSubmit={onSubmit}>
             <h3>{editing.maPM ? "Sửa phiếu mượn" : "Thêm phiếu mượn"}</h3>
 
+            {/* Chọn độc giả: MSV OR dropdown */}
             <div className={styles.grid2}>
               <div>
+                <label>MSV (tìm nhanh)</label>
+                <input
+                  name="msv"
+                  value={msv}
+                  onChange={(e) => setMsv(e.target.value)}
+                  placeholder="Nhập MSV để chọn độc giả"
+                  disabled={!!dgSelect}
+                />
+                {/* <div className={styles.help}>
+                  Nhập MSV sẽ tự chọn độc giả và khóa dropdown.
+                </div> */}
+              </div>
+              <div>
                 <label>Độc giả</label>
-                <select name="maDG" defaultValue={editing.maDG || ""} required>
+                <select
+                  name="maDG"
+                  value={dgSelect}
+                  onChange={(e) => setDgSelect(e.target.value)}
+                  disabled={!!msv}
+                >
                   <option value="">-- Chọn độc giả --</option>
                   {meta.docGia.map((d) => (
                     <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label>Thủ thư</label>
-                <select name="maTT" defaultValue={editing.maTT || ""} required>
-                  <option value="">-- Chọn thủ thư --</option>
-                  {meta.thuThu.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
+                      {d.name} {d.msv ? `(${d.msv})` : ""}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
+            {/* Thủ thư & ngày mượn (tự set + disable) */}
             <div className={styles.grid2}>
+              <div>
+                <label>Thủ thư</label>
+                <select value={user?.maTT || editing.maTT || ""} disabled>
+                  <option value="">
+                    {user?.maTT
+                      ? `${user.maTT} — (Tự động)`
+                      : editing.maTT || "-- Không có --"}
+                  </option>
+                </select>
+                {/* vẫn gửi về server */}
+                <input
+                  type="hidden"
+                  name="maTT"
+                  value={user?.maTT || editing.maTT || ""}
+                />
+              </div>
               <div>
                 <label>Ngày mượn</label>
                 <input
                   type="date"
+                  value={editing.ngayMuon?.substring(0, 10) || todayStr}
+                  disabled
+                  readOnly
+                />
+                {/* vẫn gửi về server */}
+                <input
+                  type="hidden"
                   name="ngayMuon"
-                  defaultValue={editing.ngayMuon?.substring(0, 10) || ""}
+                  value={editing.ngayMuon?.substring(0, 10) || todayStr}
                 />
               </div>
+            </div>
+
+            <div className={styles.grid2}>
               <div>
                 <label>Ngày hẹn trả</label>
                 <input
@@ -233,6 +323,7 @@ export default function PhieuMuon() {
                   defaultValue={editing.ngayHenTra?.substring(0, 10) || ""}
                 />
               </div>
+              <div></div>
             </div>
 
             <div className={styles.itemsHead}>
@@ -364,7 +455,16 @@ function Row({ row, onEdit, onDelete }) {
                   <span>{d.tieuDe || d.maSach}</span>
                   <span className={styles.dot}></span>
                   <span>SL: {d.soLuong}</span>
-                  <span className={styles.state}>{d.trangThai}</span>
+                  <span
+                    className={styles.state}
+                    style={{
+                      color: d.trangThai === "Đã trả" ? "#00CC00" : "#CC6600",
+                      marginLeft: "10px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {d.trangThai}
+                  </span>
                 </li>
               ))}
               {(row.items || []).length === 0 && <li>Không có chi tiết.</li>}
