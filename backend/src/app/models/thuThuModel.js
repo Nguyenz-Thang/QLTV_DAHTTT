@@ -10,15 +10,18 @@ async function getAll() {
 // Thêm thủ thư
 async function create(data) {
   const pool = await getPool();
-  await pool.request()
+  await pool
+    .request()
     .input("maTT", data.maTT)
     .input("tenTT", data.tenTT)
+    .input("ngaySinh", data.ngaySinh)
+    .input("cccd", data.cccd)
     .input("email", data.email)
-    .input("soDienThoai", data.soDienThoai)
+    .input("SDT", data.SDT)
     .input("diaChi", data.diaChi)
-    .query(`
-      INSERT INTO ThuThu (maTT, tenTT, email, soDienThoai, diaChi)
-      VALUES (@maTT, @tenTT, @email, @soDienThoai, @diaChi)
+    .input("chucVu", data.chucVu).query(`
+      INSERT INTO ThuThu (maTT,tenTT,ngaySinh, cccd, email, SDT, diaChi, chucVu)
+      VALUES (@maTT,@tenTT,@ngaySinh, @cccd, @email, @SDT, @diaChi, @chucVu)
     `);
   return { message: "Thêm thủ thư thành công" };
 }
@@ -26,7 +29,8 @@ async function create(data) {
 // Xoá thủ thư
 async function remove(maTT) {
   const pool = await getPool();
-  const result = await pool.request()
+  const result = await pool
+    .request()
     .input("maTT", maTT)
     .query("DELETE FROM ThuThu WHERE maTT=@maTT");
   return result.rowsAffected[0] > 0;
@@ -35,15 +39,18 @@ async function remove(maTT) {
 // Cập nhật thủ thư
 async function update(maTT, data) {
   const pool = await getPool();
-  await pool.request()
+  await pool
+    .request()
     .input("maTT", maTT)
     .input("tenTT", data.tenTT)
+    .input("ngaySinh", data.ngaySinh)
+    .input("cccd", data.cccd)
     .input("email", data.email)
-    .input("soDienThoai", data.soDienThoai)
+    .input("SDT", data.SDT)
     .input("diaChi", data.diaChi)
-    .query(`
+    .input("chucVu", data.chucVu).query(`
       UPDATE ThuThu
-      SET tenTT=@tenTT, email=@email, soDienThoai=@soDienThoai, diaChi=@diaChi
+      SET tenTT=@tenTT,ngaySinh=@ngaySinh, cccd=@cccd, email=@email, SDT=@SDT, diaChi=@diaChi, chucVu=@chucVu
       WHERE maTT=@maTT
     `);
   return { message: "Cập nhật thủ thư thành công" };

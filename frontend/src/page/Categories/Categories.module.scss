@@ -12,7 +12,6 @@
   padding-left: 40px;
   padding-top: 14px;
 }
-
 .icon {
   width: 16px;
   height: 16px;
@@ -21,30 +20,32 @@
 .ct {
   font-weight: 500;
 }
+
 .page {
   padding: 16px;
+  background: #fff;
+  margin: 20px;
+  border-radius: 20px;
+  border: 1px solid #eef1ff;
+  box-shadow: 0 10px 30px rgba(34, 55, 113, 0.08);
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
-.header h2 {
-  margin: 0;
-  color: #223771;
-}
-
 .tools {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
+/* search */
 .searchBox {
   position: relative;
-  width: 360px;
+  width: 420px;
   max-width: 100%;
   display: flex;
   align-items: center;
@@ -75,10 +76,8 @@
   color: #8796d1;
   padding: 4px;
 }
-.clear:hover {
-  color: #223771;
-}
 
+/* buttons */
 .primary {
   display: inline-flex;
   align-items: center;
@@ -95,17 +94,26 @@
   background: #fd7e14;
 }
 
-.loading,
-.error {
-  padding: 12px;
+.ghost {
+  background: transparent;
+  border: 1px solid #ccd5f0;
+  color: #223771;
+  padding: 8px 12px;
   border-radius: 10px;
-  margin-top: 8px;
+  cursor: pointer;
+}
+
+/* states */
+.loading {
+  padding: 10px;
+  color: #223771;
 }
 .error {
-  background: #ffeaea;
+  padding: 10px;
   color: #b00020;
 }
 
+/* table */
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -118,26 +126,25 @@
 .table td {
   padding: 10px 12px;
   border-bottom: 1px solid #f1f3ff;
+  text-align: left;
 }
 .table thead th {
   background: #f6f8ff;
   color: #223771;
-  text-align: left;
   font-weight: 500;
 }
 .table tbody tr:hover {
   background: #f9fbff;
 }
+
 .descCell {
-  color: #3f4e88;
-  font-size: 13px;
-  line-height: 1.4;
-  max-width: 0;
+  max-width: 560px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
+/* action buttons in table */
 .actions {
   display: flex;
   gap: 8px;
@@ -152,6 +159,10 @@
   background: #eef2ff;
   border: 1px solid #dfe7ff;
   color: #223771;
+  cursor: pointer;
+}
+.delete {
+  color: #b00020;
 }
 .edit:hover {
   background: #ffd38f;
@@ -160,29 +171,27 @@
 .delete:hover {
   background: #ffe1e1;
   border-color: #ffb3b3;
-  color: #b00020;
 }
 
-/* Modal form */
-.form h3 {
-  margin: 0 0 10px;
-  color: #223771;
-}
-.form label {
-  display: block;
-  font-size: 13px;
-  margin-top: 10px;
-  color: #3f4e88;
+/* form in modal */
+.form {
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #eef1ff;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .form input,
 .form textarea {
-  width: 400px;
+  width: 100%;
   border: 1px solid #ccd5f0;
   border-radius: 10px;
   padding: 8px 10px;
-  font-size: 14px;
-  color: #223771;
   background: #fff;
+  color: #223771;
 }
 .form input:focus,
 .form textarea:focus {
@@ -190,21 +199,20 @@
   border-color: #fd7e14;
   box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.15);
 }
-
 .formActions {
-  margin-top: 12px;
   display: flex;
-  gap: 10px;
   justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
-.ghost {
-  background: transparent;
-  border: 1px solid #ccd5f0;
-  color: #223771;
-  padding: 8px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.ghost:hover {
-  border-color: #223771;
+
+/* responsive */
+@media (max-width: 640px) {
+  .tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .searchBox {
+    width: 100%;
+  }
 }

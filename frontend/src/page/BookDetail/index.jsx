@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 const API = "http://localhost:5000/api/sach";
-const CMT_API = "http://localhost:3000/binhLuan";
+const CMT_API = "http://localhost:5000/api/binhluan";
 
 export default function BookDetail() {
   const { maSach } = useParams();
@@ -69,66 +69,69 @@ export default function BookDetail() {
     setCLoading(true);
     try {
       const res = await fetch(
-        `${CMT_API}?sachId=${encodeURIComponent(
-          maSach
-        )}&_sort=ngayBL&_order=asc`
+        `${CMT_API}?sachId=${encodeURIComponent(maSach)}`
       );
       const data = await res.json();
-      setComments(Array.isArray(data) ? data : []);
+      // data.data là mảng [{id, maBL, maSach, maTK, maBLCha, noiDung, ngayBL, hoTen}]
+      setComments(Array.isArray(data.data) ? data.data : []);
     } finally {
       setCLoading(false);
     }
   };
+
   useEffect(() => {
     loadComments();
   }, [maSach]);
 
   // build tree
+  // build tree
   const tree = useMemo(() => {
     const byParent = new Map();
     comments.forEach((c) => {
-      const k = c.binhLuanChaId ?? "root";
+      const k = c.maBLCha ?? "root"; // <<< đổi từ binhLuanChaId -> maBLCha
       if (!byParent.has(k)) byParent.set(k, []);
       byParent.get(k).push(c);
     });
     return byParent;
   }, [comments]);
+
   const childrenOf = (pid) => tree.get(pid ?? "root") || [];
 
   // ===== CRUD =====
   async function addComment(parentId) {
     const text = parentId ? editText : newText;
     if (!text.trim()) return;
-    const payload = {
-      noiDung: text.trim(),
-      ngayBL: new Date().toISOString(),
-      sachId: maSach,
-      taiKhoanId: user?.maTK || "anonymous",
-      binhLuanChaId: parentId ?? null,
-    };
     const res = await fetch(CMT_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        maSach,
+        noiDung: text.trim(),
+        maBLCha: parentId ?? null,
+      }),
     });
-    if (!res.ok) return alert("Không thêm được bình luận");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.message || "Không thêm được bình luận");
     await loadComments();
-    if (parentId) {
-      setReplyTo(null);
-      setEditText("");
-    } else {
-      setNewText("");
-    }
+    parentId ? setEditText("") : setNewText("");
+    setReplyTo(null);
   }
 
   async function updateComment(id) {
     if (!editText.trim()) return;
     const res = await fetch(`${CMT_API}/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ noiDung: editText.trim() }),
     });
-    if (!res.ok) return alert("Không sửa được bình luận");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.message || "Không sửa được bình luận");
     await loadComments();
     setEditId(null);
     setEditText("");
@@ -136,16 +139,13 @@ export default function BookDetail() {
 
   // xóa cả thread
   async function deleteThread(id) {
-    const queue = [id];
-    const all = [...comments];
-    while (queue.length) {
-      const cur = queue.shift();
-      const childs = all
-        .filter((c) => c.binhLuanChaId === cur)
-        .map((c) => c.id);
-      queue.push(...childs);
-      await fetch(`${CMT_API}/${cur}`, { method: "DELETE" });
-    }
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
+    const res = await fetch(`${CMT_API}/${id}`, {
+      method: "DELETE",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.message || "Không xoá được");
     await loadComments();
   }
 
@@ -281,11 +281,10 @@ function CommentItem({
 
   // tên để render avatar
   const displayName =
-    (currentUser?.maTK &&
-      currentUser?.maTK === c.taiKhoanId &&
-      currentUser?.hoTen) ||
+    (currentUser?.maTK && currentUser?.maTK === c.maTK && currentUser?.hoTen) ||
     c.hoTen ||
-    String(c.taiKhoanId || "User");
+    String(c.maTK || "User"); // <<< đổi taiKhoanId -> maTK
+
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
     displayName
   )}&background=random`;
