@@ -1,5 +1,5 @@
 // src/pages/PhieuTra/PhieuTra.jsx
-import { useEffect, useMemo, useState, useCallback, useContext } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
 import styles from "./PhieuTra.module.scss";
 import { usePhieuTraApi } from "../../api/phieuTraApi";
 import Modal from "../../components/Modal";

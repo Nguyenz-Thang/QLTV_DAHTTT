@@ -70,9 +70,9 @@ export default function LoginPage() {
           </button>
         </form>
         <div className={styles.footer}>
-          <a className={styles.xongsexoa} href="/register">
+          {/* <a className={styles.xongsexoa} href="/register">
             Đăng ký
-          </a>
+          </a> */}
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@
   // box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
 
   position: relative;
+  transition: all 0.5s ease;
 }
 
 .collapsed {
@@ -82,6 +83,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .line1 {
@@ -144,6 +146,14 @@
 //   margin-left: auto;
 // }
 @media (max-width: 768px) {
+  .brandText,
+  .label,
+  .userInfo {
+    display: none;
+  }
+  .sidebar {
+    width: 72px;
+  }
 }
 /* Group & Sub menu */
 .group {
