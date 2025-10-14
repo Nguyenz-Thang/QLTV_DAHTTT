@@ -81,6 +81,16 @@ export function useLichSuApi() {
     },
     [af]
   );
+  const cancelPending = useCallback(
+    async (maPM) => {
+      return toJson(
+        await af(`${BASE}/cancel/${encodeURIComponent(maPM)}`, {
+          method: "POST",
+        })
+      );
+    },
+    [af]
+  );
 
-  return { getMine, getByAccount, downloadCSV };
+  return { getMine, getByAccount, downloadCSV, cancelPending };
 }

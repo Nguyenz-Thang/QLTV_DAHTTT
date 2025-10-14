@@ -32,3 +32,13 @@ exports.listMyHistory = async (req, res) => {
     res.status(500).json({ message: "Không lấy được lịch sử của bạn" });
   }
 };
+exports.cancelPendingBorrow = async (req, res) => {
+  try {
+    const { maPM } = req.params;
+    const out = await History.cancelPendingBorrow(maPM);
+    res.json(out);
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ message: e.message || "Không hủy được phiếu" });
+  }
+};

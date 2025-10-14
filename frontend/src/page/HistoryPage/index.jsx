@@ -1,12 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLichSuApi } from "../../api/lichsuApi";
 import styles from "./HistoryPage.module.scss";
+import { BookOpen } from "lucide-react";
 
 const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
 
+function fileUrl(p) {
+  if (!p) return "";
+  if (/^https?:\/\//i.test(p)) return p;
+  const base = FILE_HOST.replace(/\/+$/, "");
+  const rel = String(p).startsWith("/") ? p : `/${p}`;
+  return `${base}${rel}`;
+}
+
 export default function HistoryPage({ maTK }) {
-  // nếu xem của người khác, truyền maTK; còn lại dùng của mình
-  const { getMine, getByAccount } = useLichSuApi();
+  const { getMine, getByAccount, cancelPending } = useLichSuApi(); // 👈 thêm cancelPending
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, pageSize: 20 });
   const [q, setQ] = useState({ status: "all", dateFrom: "", dateTo: "" });
@@ -31,7 +39,7 @@ export default function HistoryPage({ maTK }) {
   };
 
   useEffect(() => {
-    fetchData(1); /* eslint-disable-next-line*/
+    fetchData(1); // eslint-disable-next-line
   }, []);
 
   const onFilter = (e) => {
@@ -44,6 +52,16 @@ export default function HistoryPage({ maTK }) {
     fetchData(1);
   };
 
+  const onCancel = async (maPM) => {
+    if (!window.confirm(`Hủy phiếu mượn ${maPM}?`)) return;
+    try {
+      await cancelPending(maPM);
+      await fetchData(meta.page);
+    } catch (e) {
+      alert(e.message || "Không hủy được phiếu");
+    }
+  };
+
   return (
     <div className={styles.page}>
       <h2>Lịch sử mượn</h2>
@@ -54,8 +72,8 @@ export default function HistoryPage({ maTK }) {
           <select name="status" value={q.status} onChange={onFilter}>
             <option value="all">Tất cả</option>
             <option value="borrowing">Đang mượn</option>
-            <option value="partial">Đang mượn (trả thiếu)</option>
             <option value="returned">Đã trả</option>
+            <option value="pending">Chờ lấy</option> {/* 👈 mới */}
           </select>
         </label>
         <label>
@@ -88,9 +106,10 @@ export default function HistoryPage({ maTK }) {
             <th>Sách</th>
             <th>SL</th>
             <th>Đã trả</th>
+            <th>Ngày hẹn trả</th>
             <th>Ngày trả</th>
             <th>Tình trạng</th>
-            {/* <th>TL online</th> */}
+            <th>Hành động</th> {/* 👈 thêm cột */}
           </tr>
         </thead>
         <tbody>
@@ -99,12 +118,14 @@ export default function HistoryPage({ maTK }) {
               <td>{new Date(r.ngayMuon).toLocaleDateString()}</td>
               <td>
                 <div className={styles.bookCell}>
-                  {r.anhBia ? (
-                    <img src={`${FILE_HOST}${r.anhBia}`} alt="" />
-                  ) : (
-                    <div className={styles.noCover} />
-                  )}
-                  <div>
+                  <div className={styles.cover}>
+                    {r.anhBia ? (
+                      <img src={fileUrl(r.anhBia)} alt={r.tieuDe || ""} />
+                    ) : (
+                      <BookOpen />
+                    )}
+                  </div>
+                  <div className={styles.metaWrap}>
                     <div className={styles.bookTitle}>{r.tieuDe}</div>
                     <div className={styles.sub}>Mã PM: {r.maPM}</div>
                   </div>
@@ -113,14 +134,21 @@ export default function HistoryPage({ maTK }) {
               <td>{r.soLuongMuon}</td>
               <td>{r.soLuongTra}</td>
               <td>
+                {r.ngayHenTra
+                  ? new Date(r.ngayHenTra).toLocaleDateString()
+                  : "—"}
+              </td>
+              <td>
                 {r.ngayTra ? new Date(r.ngayTra).toLocaleDateString() : "—"}
               </td>
               <td>
                 <span
                   className={
-                    r.trangThai.startsWith("Đã")
+                    r.trangThai === "Chờ lấy"
+                      ? styles.badgeInfo
+                      : r.trangThai?.startsWith("Đã")
                       ? styles.badgeOk
-                      : r.trangThai.includes("thiếu")
+                      : r.trangThai?.includes("thiếu")
                       ? styles.badgeWarn
                       : styles.badge
                   }
@@ -128,24 +156,23 @@ export default function HistoryPage({ maTK }) {
                   {r.trangThai}
                 </span>
               </td>
-              {/* <td>
-                {r.taiLieuOnl ? (
-                  <a
-                    href={`${FILE_HOST}${r.taiLieuOnl}`}
-                    target="_blank"
-                    rel="noreferrer"
+              <td>
+                {r.trangThai === "Chờ lấy" ? (
+                  <button
+                    className={styles.danger}
+                    onClick={() => onCancel(r.maPM)}
                   >
-                    Tải
-                  </a>
+                    Hủy phiếu
+                  </button>
                 ) : (
                   "—"
                 )}
-              </td> */}
+              </td>
             </tr>
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan="7">Chưa có lịch sử</td>
+              <td colSpan="8">Chưa có lịch sử</td>
             </tr>
           )}
         </tbody>

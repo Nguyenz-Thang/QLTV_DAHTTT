@@ -97,3 +97,23 @@
 .loading {
   margin-top: 10px;
 }
+
+.badgeInfo {
+  background: #eaf3ff;
+  color: #0b5ed7;
+  border: 1px solid #d5e6ff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.danger {
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.danger:hover {
+  background: #fee2e2;
+}
