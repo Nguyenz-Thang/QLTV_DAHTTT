@@ -2,9 +2,8 @@
 const { getPool, sql } = require("../../config/db");
 
 // --- helpers (internal) ---
-async function _getBorrowReturnSummary(pool, maPM, maSach) {
-  const rsMuon = await pool
-    .request()
+async function _getBorrowReturnSummaryTx(req, maPM, maSach) {
+  const rsMuon = await req
     .input("maPM", sql.VarChar, maPM)
     .input("maSach", sql.VarChar, maSach).query(`
       SELECT ISNULL(SUM(soLuong),0) AS soMuon
@@ -12,8 +11,8 @@ async function _getBorrowReturnSummary(pool, maPM, maSach) {
       WHERE maPM=@maPM AND maSach=@maSach
     `);
 
-  const rsTra = await pool
-    .request()
+  // Tạo request mới trong cùng transaction cho mỗi truy vấn
+  const rsTra = await new sql.Request(req.transaction)
     .input("maPM", sql.VarChar, maPM)
     .input("maSach", sql.VarChar, maSach).query(`
       SELECT ISNULL(SUM(ct.soLuong),0) AS daTra
@@ -77,7 +76,7 @@ async function createPhieuTra({ maPM, maTT, ngayTra, items }) {
   try {
     await trx.begin();
 
-    // kiểm tra tồn tại phiếu mượn
+    // kiểm tra tồn tại PM
     let rq = new sql.Request(trx);
     const hasPM = await rq
       .input("maPM", sql.VarChar, maPM)
@@ -87,7 +86,7 @@ async function createPhieuTra({ maPM, maTT, ngayTra, items }) {
     const maPT = "PT" + Date.now();
     const ngay = ngayTra ? new Date(ngayTra) : new Date();
 
-    // tạo PhieuTra
+    // header
     rq = new sql.Request(trx);
     await rq
       .input("maPT", sql.VarChar, maPT)
@@ -98,50 +97,69 @@ async function createPhieuTra({ maPM, maTT, ngayTra, items }) {
         VALUES(@maPT, @maPM, @maTT, @ngayTra)
       `);
 
-    // vòng lặp chi tiết trả
+    // --- GỘP các dòng trùng maSach để tránh over-return do payload ---
+    const merged = new Map();
     for (const it of items || []) {
-      const maSach = String(it.maSach);
-      const soLuong = Number(it.soLuong || 0);
-      // MẶC ĐỊNH 'Đã trả' nếu client không truyền
-      const tinhTrang = it.tinhTrang ?? "Đã trả";
+      const key = String(it.maSach);
+      const qty = Number(it.soLuong || 0);
+      if (!key || !qty) continue;
+      const cur = merged.get(key) || {
+        soLuong: 0,
+        tinhTrang: it.tinhTrang ?? "Đã trả",
+      };
+      cur.soLuong += qty;
+      // nếu có tinhTrang mới thì ưu tiên cái có nội dung
+      if ((it.tinhTrang || "").trim()) cur.tinhTrang = it.tinhTrang.trim();
+      merged.set(key, cur);
+    }
 
-      if (!maSach || !soLuong || soLuong <= 0) continue;
+    // --- LẤY tồn còn nợ trong CÙNG transaction ---
+    // dựng cache "còn nợ" theo từng sách để dùng xuyên vòng lặp
+    const remainBySach = new Map();
+    for (const maSach of merged.keys()) {
+      const r1 = new sql.Request(trx);
+      // nhét transaction vào request để helper thấy mọi thay đổi trong trx
+      r1.transaction = trx;
+      const { conNo } = await _getBorrowReturnSummaryTx(r1, maPM, maSach);
+      remainBySach.set(maSach, conNo);
+    }
 
-      // kiểm tra còn nợ trước khi trả
-      const { conNo } = await _getBorrowReturnSummary(pool, maPM, maSach);
-      if (soLuong > conNo) {
-        throw new Error(`Sách ${maSach} trả vượt số lượng còn nợ (${conNo}).`);
+    // --- Ghi chi tiết ---
+    for (const [maSach, { soLuong, tinhTrang }] of merged.entries()) {
+      const left = remainBySach.get(maSach) ?? 0;
+      if (soLuong > left) {
+        throw new Error(`Sách ${maSach} trả vượt số lượng còn nợ (${left}).`);
       }
 
       const maCTPT = "CTPT" + Date.now() + Math.floor(Math.random() * 1000);
 
-      // insert ChiTietPhieuTra
-      rq = new sql.Request(trx);
-      await rq
+      // insert chi tiết
+      let rq1 = new sql.Request(trx);
+      await rq1
         .input("maCTPT", sql.VarChar, maCTPT)
         .input("maPT", sql.VarChar, maPT)
         .input("maSach", sql.VarChar, maSach)
         .input("soLuong", sql.Int, soLuong)
-        .input("tinhTrang", sql.NVarChar, tinhTrang).query(`
+        .input("tinhTrang", sql.NVarChar, tinhTrang ?? "Đã trả").query(`
           INSERT INTO ChiTietPhieuTra(maCTPT, maPT, maSach, soLuong, tinhTrang)
           VALUES(@maCTPT, @maPT, @maSach, @soLuong, @tinhTrang)
         `);
 
-      // giảm số lượng đang mượn trong Sách
-      rq = new sql.Request(trx);
-      await rq
+      // cập nhật sách
+      let rq2 = new sql.Request(trx);
+      await rq2
         .input("maSach", sql.VarChar, maSach)
         .input("soLuong", sql.Int, soLuong).query(`
           UPDATE Sach
-          SET soLuongMuon = CASE WHEN soLuongMuon >= @soLuong
-                                 THEN soLuongMuon - @soLuong ELSE 0 END
+          SET soLuongMuon = CASE WHEN ISNULL(soLuongMuon,0) >= @soLuong
+                                 THEN ISNULL(soLuongMuon,0) - @soLuong ELSE 0 END
           WHERE maSach=@maSach
         `);
 
-      // CẬP NHẬT TRẠNG THÁI CHI TIẾT PHIẾU MƯỢN
-      const conNoSau = conNo - soLuong;
-      rq = new sql.Request(trx);
-      await rq
+      // cập nhật trạng thái CT mượn
+      const conNoSau = left - soLuong;
+      let rq3 = new sql.Request(trx);
+      await rq3
         .input("maPM", sql.VarChar, maPM)
         .input("maSach", sql.VarChar, maSach)
         .input(
@@ -153,6 +171,9 @@ async function createPhieuTra({ maPM, maTT, ngayTra, items }) {
           SET trangThai = @trangThai
           WHERE maPM = @maPM AND maSach = @maSach
         `);
+
+      // giảm số còn nợ trong cache cho an toàn nếu có nhiều dòng cùng maSach
+      remainBySach.set(maSach, conNoSau);
     }
 
     await trx.commit();

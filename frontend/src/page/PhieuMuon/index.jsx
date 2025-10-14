@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useCallback } from "react";
 import styles from "./PhieuMuon.module.scss";
 import Modal from "../../components/Modal";
 import { usePhieuMuonApi } from "../../api/phieuMuonApi";
@@ -17,6 +17,43 @@ import {
 } from "lucide-react";
 import { AuthContext } from "../../context/AuthContext";
 
+/* ---------- utils ---------- */
+const todayStr = new Date().toISOString().slice(0, 10);
+const initialDraft = () => ({
+  maDG: "",
+  maTT: "",
+  ngayMuon: todayStr,
+  ngayHenTra: "",
+  items: [{ maSach: "", soLuong: 1 }],
+});
+
+/** State dính theo key trong sessionStorage */
+function useStickyState(key, initialValue) {
+  const [state, setState] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (raw != null) return JSON.parse(raw);
+    } catch {}
+    return typeof initialValue === "function" ? initialValue() : initialValue;
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(state));
+    } catch {}
+  }, [key, state]);
+
+  const reset = useCallback(() => {
+    const v =
+      typeof initialValue === "function" ? initialValue() : initialValue;
+    try {
+      sessionStorage.removeItem(key);
+    } catch {}
+    setState(v);
+  }, [key, initialValue]);
+
+  return [state, setState, reset];
+}
+
 export default function PhieuMuon() {
   const api = usePhieuMuonApi();
   const { user } = useContext(AuthContext);
@@ -26,15 +63,22 @@ export default function PhieuMuon() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  const [editing, setEditing] = useState(null); // null | {} | row (kèm items)
+  /* 🔒 Bản nháp phiếu mượn dính qua re-render/đóng mở modal */
+  const [editing, setEditing, resetEditing] = useStickyState(
+    "phieumuon.draft",
+    initialDraft
+  );
   const [saving, setSaving] = useState(false);
   const [meta, setMeta] = useState({ docGia: [], thuThu: [], sach: [] });
 
-  // chọn độc giả bằng 1 trong 2 cách: msv OR select
-  const [msv, setMsv] = useState("");
-  const [dgSelect, setDgSelect] = useState("");
+  /* Nhập độc giả theo 2 cách — cũng dính session */
+  const [msv, setMsv] = useStickyState("phieumuon.msv", "");
+  const [dgSelect, setDgSelect] = useStickyState("phieumuon.dgSelect", "");
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const [modalOpen, setModalOpen] = useStickyState(
+    "phieumuon.modalOpen",
+    false
+  );
 
   const load = async () => {
     try {
@@ -51,7 +95,7 @@ export default function PhieuMuon() {
         docGia: (dg.data || dg || []).map((d) => ({
           id: d.maDG,
           name: d.hoTen,
-          msv: d.MSV || d.msv || "", // cần field MSV từ API độc giả
+          msv: d.MSV || d.msv || "",
         })),
         thuThu: (tt.data || tt || []).map((t) => ({
           id: t.maTT,
@@ -75,81 +119,80 @@ export default function PhieuMuon() {
   }, []);
   useEffect(() => {
     const t = setTimeout(load, 300);
-    return () => clearTimeout(t); /* eslint-disable-next-line */
+    return () => clearTimeout(t);
+    // eslint-disable-next-line
   }, [q]);
 
-  const startCreate = () =>
-    setEditing({
-      maDG: "",
-      maTT: user?.maTT || "", // auto thủ thư đăng nhập
-      ngayMuon: todayStr, // auto ngày hiện tại
-      ngayHenTra: "",
-      items: [{ maSach: "", soLuong: 1 }],
+  const startCreate = () => {
+    setEditing((ed) => {
+      // nếu đã có nháp thì giữ nguyên, nếu chưa thì khởi tạo
+      const hasDraft = ed && (ed.maDG || (ed.items && ed.items.length > 0));
+      return hasDraft
+        ? { ...ed, maTT: user?.maTT || ed.maTT || "" }
+        : { ...initialDraft(), maTT: user?.maTT || "" };
     });
+    // đồng bộ bộ chọn độc giả với draft hiện tại
+    setMsv("");
+    setDgSelect((s) => s || "");
+    setModalOpen(true);
+  };
 
   const startEdit = (row) => {
     setEditing({
       ...row,
+      // đảm bảo controlled values
+      ngayMuon:
+        row.ngayMuon?.length > 10 ? row.ngayMuon : row.ngayMuon || todayStr,
+      ngayHenTra: row.ngayHenTra?.substring(0, 10) || "",
       items: row.items?.length ? row.items : [{ maSach: "", soLuong: 1 }],
     });
+    setMsv("");
+    setDgSelect(row.maDG || "");
+    setModalOpen(true);
   };
-
-  // đồng bộ ô chọn Độc giả khi mở modal
-  useEffect(() => {
-    if (editing) {
-      setMsv("");
-      setDgSelect(editing.maDG || "");
-    }
-  }, [editing]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
 
-    // --- resolve maDG theo ưu tiên MSV ---
+    /* resolve maDG theo ưu tiên MSV */
     let maDGSubmit = dgSelect || "";
     const msvInput = (msv || "").trim();
     if (msvInput) {
       const found = meta.docGia.find((d) => String(d.msv) === msvInput);
-      if (!found) {
-        alert("Không tìm thấy độc giả với MSV đã nhập.");
-        return;
-      }
+      if (!found) return alert("Không tìm thấy độc giả với MSV đã nhập.");
       maDGSubmit = found.id;
     }
     if (!maDGSubmit) return alert("Chọn độc giả hoặc nhập MSV hợp lệ.");
 
-    // --- thủ thư: tự set theo user đang đăng nhập ---
     const maTTSubmit = user?.maTT || editing?.maTT || "";
-
-    // --- ngày mượn: mặc định hôm nay & bị disable nên không submit từ form ---
-    const ngayMuonSubmit = editing?.ngayMuon
-      ? editing.ngayMuon.length > 10
-        ? editing.ngayMuon
-        : `${editing.ngayMuon}T00:00:00.000Z`
-      : new Date().toISOString();
 
     const payload = {
       maDG: maDGSubmit,
       maTT: maTTSubmit,
-      ngayMuon: ngayMuonSubmit,
-      ngayHenTra: f.get("ngayHenTra") || null,
+      ngayMuon:
+        editing?.ngayMuon?.length > 10
+          ? editing.ngayMuon
+          : `${editing?.ngayMuon || todayStr}T00:00:00.000Z`,
+      ngayHenTra: editing?.ngayHenTra || null,
       items: (editing.items || [])
-        .map((it, idx) => ({
-          maSach: f.getAll("maSach")[idx],
-          soLuong: Number(f.getAll("soLuong")[idx] || 0) || 1,
+        .map((it) => ({
+          maSach: it.maSach,
+          soLuong: Number(it.soLuong || 1) || 1,
           trangThai: it.trangThai || "Đang mượn",
         }))
         .filter((x) => x.maSach),
     };
-
-    if (!payload.items.length) return alert("Thêm ít nhất 1 sách");
+    if (!payload.items.length) return alert("Thêm ít nhất 1 sách.");
 
     setSaving(true);
     try {
       if (editing?.maPM) await api.update(editing.maPM, payload);
       else await api.create(payload);
-      setEditing(null);
+
+      setModalOpen(false);
+      resetEditing(); // xóa nháp sau khi lưu thành công
+      setMsv("");
+      setDgSelect("");
       await load();
     } catch (e2) {
       alert(e2.message || "Lưu phiếu mượn thất bại");
@@ -167,6 +210,37 @@ export default function PhieuMuon() {
       alert(e.message || "Không thể xoá");
     }
   };
+
+  /* các handler controlled cho form */
+  const setNgayHenTra = (v) =>
+    setEditing((ed) => ({ ...ed, ngayHenTra: v || "" }));
+
+  const addLine = () =>
+    setEditing((ed) => ({
+      ...ed,
+      items: [...(ed.items || []), { maSach: "", soLuong: 1 }],
+    }));
+
+  const changeItemSach = (idx, maSach) =>
+    setEditing((ed) => {
+      const items = [...(ed.items || [])];
+      items[idx] = { ...items[idx], maSach };
+      return { ...ed, items };
+    });
+
+  const changeItemQty = (idx, soLuong) =>
+    setEditing((ed) => {
+      const v = Math.max(1, Number(soLuong || 1));
+      const items = [...(ed.items || [])];
+      items[idx] = { ...items[idx], soLuong: v };
+      return { ...ed, items };
+    });
+
+  const removeLine = (idx) =>
+    setEditing((ed) => ({
+      ...ed,
+      items: (ed.items || []).filter((_, i) => i !== idx),
+    }));
 
   return (
     <>
@@ -238,15 +312,15 @@ export default function PhieuMuon() {
       </div>
 
       <Modal
-        isOpen={!!editing}
-        onRequestClose={() => setEditing(null)}
+        isOpen={!!modalOpen}
+        onRequestClose={() => setModalOpen(false)} // ❌ không xóa nháp khi đóng
         bodyOpenClassName="modal-custom-body"
       >
-        {editing && (
+        {modalOpen && (
           <form className={styles.form} onSubmit={onSubmit}>
-            <h3>{editing.maPM ? "Sửa phiếu mượn" : "Thêm phiếu mượn"}</h3>
+            <h3>{editing?.maPM ? "Sửa phiếu mượn" : "Thêm phiếu mượn"}</h3>
 
-            {/* Chọn độc giả: MSV OR dropdown */}
+            {/* Chọn độc giả: MSV OR dropdown (dính session) */}
             <div className={styles.grid2}>
               <div>
                 <label>MSV (tìm nhanh)</label>
@@ -257,9 +331,6 @@ export default function PhieuMuon() {
                   placeholder="Nhập MSV để chọn độc giả"
                   disabled={!!dgSelect}
                 />
-                {/* <div className={styles.help}>
-                  Nhập MSV sẽ tự chọn độc giả và khóa dropdown.
-                </div> */}
               </div>
               <div>
                 <label>Độc giả</label>
@@ -279,7 +350,7 @@ export default function PhieuMuon() {
               </div>
             </div>
 
-            {/* Thủ thư & ngày mượn (tự set + disable) */}
+            {/* Thủ thư & ngày mượn */}
             <div className={styles.grid2}>
               <div>
                 <label>Thủ thư</label>
@@ -290,7 +361,6 @@ export default function PhieuMuon() {
                       : editing.maTT || "-- Không có --"}
                   </option>
                 </select>
-                {/* vẫn gửi về server */}
                 <input
                   type="hidden"
                   name="maTT"
@@ -305,7 +375,6 @@ export default function PhieuMuon() {
                   disabled
                   readOnly
                 />
-                {/* vẫn gửi về server */}
                 <input
                   type="hidden"
                   name="ngayMuon"
@@ -320,10 +389,11 @@ export default function PhieuMuon() {
                 <input
                   type="date"
                   name="ngayHenTra"
-                  defaultValue={editing.ngayHenTra?.substring(0, 10) || ""}
+                  value={editing.ngayHenTra || ""}
+                  onChange={(e) => setNgayHenTra(e.target.value)}
                 />
               </div>
-              <div></div>
+              <div />
             </div>
 
             <div className={styles.itemsHead}>
@@ -331,31 +401,19 @@ export default function PhieuMuon() {
               <button
                 type="button"
                 className={styles.addLine}
-                onClick={() =>
-                  setEditing((ed) => ({
-                    ...ed,
-                    items: [...ed.items, { maSach: "", soLuong: 1 }],
-                  }))
-                }
+                onClick={addLine}
               >
                 <BookPlus size={16} /> Thêm dòng
               </button>
             </div>
 
             <div className={styles.itemsBox}>
-              {editing.items?.map((it, idx) => (
+              {(editing.items || []).map((it, idx) => (
                 <div key={idx} className={styles.itemRow}>
                   <select
                     name="maSach"
-                    defaultValue={it.maSach || ""}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setEditing((ed) => {
-                        const items = [...ed.items];
-                        items[idx] = { ...items[idx], maSach: v };
-                        return { ...ed, items };
-                      });
-                    }}
+                    value={it.maSach || ""} // ✅ controlled
+                    onChange={(e) => changeItemSach(idx, e.target.value)}
                   >
                     <option value="">-- Chọn sách --</option>
                     {meta.sach.map((s) => (
@@ -368,25 +426,13 @@ export default function PhieuMuon() {
                     name="soLuong"
                     type="number"
                     min="1"
-                    defaultValue={it.soLuong || 1}
-                    onChange={(e) => {
-                      const v = Number(e.target.value || 1);
-                      setEditing((ed) => {
-                        const items = [...ed.items];
-                        items[idx] = { ...items[idx], soLuong: v };
-                        return { ...ed, items };
-                      });
-                    }}
+                    value={it.soLuong || 1} // ✅ controlled
+                    onChange={(e) => changeItemQty(idx, e.target.value)}
                   />
                   <button
                     type="button"
                     className={styles.removeLine}
-                    onClick={() =>
-                      setEditing((ed) => ({
-                        ...ed,
-                        items: ed.items.filter((_, i) => i !== idx),
-                      }))
-                    }
+                    onClick={() => removeLine(idx)}
                   >
                     <Minus size={16} /> Bỏ
                   </button>
@@ -401,9 +447,9 @@ export default function PhieuMuon() {
               <button
                 type="button"
                 className={styles.ghost}
-                onClick={() => setEditing(null)}
+                onClick={() => setModalOpen(false)} // ❌ không reset nháp
               >
-                <X size={16} /> Hủy
+                <X size={16} /> Đóng
               </button>
               <button className={styles.primary} disabled={saving}>
                 <Save size={16} /> {saving ? "Đang lưu…" : "Lưu"}
@@ -458,7 +504,12 @@ function Row({ row, onEdit, onDelete }) {
                   <span
                     className={styles.state}
                     style={{
-                      color: d.trangThai === "Đã trả" ? "#00CC00" : "#CC6600",
+                      color:
+                        d.trangThai === "Đã trả"
+                          ? "#00CC00"
+                          : d.trangThai === "Chờ lấy"
+                          ? "#131C9EFF"
+                          : "#CC6600",
                       marginLeft: "10px",
                       fontWeight: "700",
                     }}

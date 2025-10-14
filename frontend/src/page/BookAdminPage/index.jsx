@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSachApi } from "../../api/sachApi"; // 👈 dùng hook lấy token từ AuthContext bên trong
+import { useSachApi } from "../../api/sachApi"; // 👈 hook API
 import styles from "./BookAdminPage.module.scss";
 import {
   Download,
@@ -10,14 +10,30 @@ import {
 } from "lucide-react";
 import Modal from "../../components/Modal";
 
+// 👇 Host của backend để hiển thị file tĩnh (uploads)
+const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
+
 export default function BookAdminPage() {
   const { getMeta, listSach, createSach, updateSach, deleteSach } =
     useSachApi();
+
   const [list, setList] = useState([]);
   const [meta, setMeta] = useState({ theLoai: [], tacGia: [], nhaXuatBan: [] });
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+
+  // Preview ảnh bìa khi thêm/sửa
+  const [coverPreview, setCoverPreview] = useState("");
+  const onPickAnhBia = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) {
+      // Không chọn file mới -> hiện lại ảnh cũ (nếu có)
+      setCoverPreview(editing?.anhBia ? FILE_HOST + editing.anhBia : "");
+      return;
+    }
+    setCoverPreview(URL.createObjectURL(f));
+  };
 
   const load = async () => {
     try {
@@ -42,12 +58,31 @@ export default function BookAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mỗi lần mở form (editing thay đổi) → đồng bộ preview ảnh bìa hiện có
+  useEffect(() => {
+    if (editing?.anhBia) setCoverPreview(FILE_HOST + editing.anhBia);
+    else setCoverPreview("");
+  }, [editing]);
+
   const startCreate = () => setEditing({});
   const startEdit = (row) => setEditing(row);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
     const fd = new FormData(e.target); // KHÔNG set Content-Type
+    // Nếu đang SỬA mà không chọn file ảnh mới → gửi kèm ảnh cũ
+    const fileAnh = e.target.elements["anhBia"]?.files?.[0];
+    if (editing?.maSach && !fileAnh && editing?.anhBia) {
+      fd.append("anhBiaOld", editing.anhBia); // gửi path tương đối để backend giữ nguyên
+    }
+
+    // (Tuỳ chọn) giữ tài liệu cũ nếu không chọn file mới
+    const fileTL = e.target.elements["taiLieuOnl"]?.files?.[0];
+    if (editing?.maSach && !fileTL && editing?.taiLieuOnl) {
+      fd.append("taiLieuOnlOld", editing.taiLieuOnl);
+    }
+
     setLoading(true);
     try {
       if (editing?.maSach) await updateSach(editing.maSach, fd);
@@ -121,7 +156,7 @@ export default function BookAdminPage() {
                 <td>
                   {r.taiLieuOnl ? (
                     <a
-                      href={`http://localhost:5000${r.taiLieuOnl}`}
+                      href={`${FILE_HOST}${r.taiLieuOnl}`}
                       target="_blank"
                       rel="noreferrer"
                       title="Tải tài liệu"
@@ -152,16 +187,19 @@ export default function BookAdminPage() {
             ))}
             {list.length === 0 && (
               <tr>
-                <td colSpan="8">Chưa có sách</td>
+                <td colSpan="9">Chưa có sách</td>
               </tr>
             )}
           </tbody>
         </table>
 
+        {/* MODAL: chỉ sửa phần form thêm/sửa */}
         <Modal
           isOpen={!!editing}
           onRequestClose={() => setEditing(null)}
           bodyOpenClassName="modal-custom-body"
+          className={styles.modal}
+          overlayClassName={styles.modalOverlay}
         >
           {editing && (
             <form className={styles.form} onSubmit={onSubmit}>
@@ -229,6 +267,30 @@ export default function BookAdminPage() {
                 </div>
               </div>
 
+              {/* ẢNH BÌA */}
+              <label>Ảnh bìa (JPG/PNG/WEBP/GIF)</label>
+              <input
+                name="anhBia"
+                type="file"
+                accept="image/*"
+                onChange={onPickAnhBia}
+              />
+
+              {/* Preview ảnh bìa */}
+              <div className={styles.coverPreview}>
+                {coverPreview ? (
+                  <img src={coverPreview} alt="Preview ảnh bìa" />
+                ) : editing?.anhBia ? (
+                  <img
+                    src={FILE_HOST + editing.anhBia}
+                    alt="Ảnh bìa hiện tại"
+                  />
+                ) : (
+                  <div className={styles.noCover}>Chưa chọn ảnh</div>
+                )}
+              </div>
+
+              {/* TÀI LIỆU ONLINE */}
               <label>Tài liệu online (PDF/DOC/EPUB)</label>
               <input
                 name="taiLieuOnl"
@@ -236,11 +298,11 @@ export default function BookAdminPage() {
                 accept=".pdf,.doc,.docx,.epub"
               />
 
-              {editing.taiLieuOnl && (
+              {editing?.taiLieuOnl && (
                 <div className={styles.current}>
                   File hiện tại:{" "}
                   <a
-                    href={`http://localhost:5000${editing.taiLieuOnl}`}
+                    href={`${FILE_HOST}${editing.taiLieuOnl}`}
                     target="_blank"
                     rel="noreferrer"
                   >

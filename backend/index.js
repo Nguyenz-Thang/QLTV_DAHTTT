@@ -47,6 +47,9 @@ app.use("/api/tacgia", tacGiaRoutes);
 const binhLuanRoutes = require("./src/app/routes/binhLuanRoutes");
 app.use("/api/binhluan", binhLuanRoutes);
 
+app.use("/api/thongke", require("./src/app/routes/thongKeRoutes"));
+app.use("/api/lichsu", require("./src/app/routes/historyRoutes"));
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
   console.log(`Server listening on http://localhost:${PORT}`)

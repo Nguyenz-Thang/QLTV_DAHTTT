@@ -17,13 +17,14 @@ import {
   ChevronDown,
   FilePlus2,
   Undo2,
+  ChartColumn,
 } from "lucide-react";
 import styles from "./Sidebar.module.scss";
 import { AuthContext } from "../../../../context/AuthContext";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [openGroup, setOpenGroup] = useState(null); // 👈 nhóm đang mở
+  const [openGroup, setOpenGroup] = useState(null);
   const { user, logout } = useContext(AuthContext) ?? {};
   const displayName = user?.hoTen || "Khách";
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -69,7 +70,28 @@ export default function Sidebar() {
             <span className={styles.label}>Sách</span>
           </NavLink>
         )}
-
+        {["Độc giả"].includes(user?.vaiTro) && (
+          <NavLink
+            to="/history"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <ClipboardList className={styles.icon} />
+            <span className={styles.label}>Lịch sử mượn trả</span>
+          </NavLink>
+        )}
+        {["Quản lý", "Thủ thư"].includes(user?.vaiTro) && (
+          <NavLink
+            to="/admin/thong-ke"
+            className={({ isActive }) =>
+              `${styles.item} ${isActive ? styles.active : ""}`
+            }
+          >
+            <ChartColumn className={styles.icon} />
+            <span className={styles.label}>Thống kê</span>
+          </NavLink>
+        )}
         {/* Quản lý tài khoản — chỉ Quản lý */}
         {user?.vaiTro === "Quản lý" && (
           <NavLink

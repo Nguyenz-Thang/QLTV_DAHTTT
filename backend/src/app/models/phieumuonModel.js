@@ -226,7 +226,7 @@ async function update(
         .input("pm", sql.VarChar, maPM)
         .input("s", sql.VarChar, maSach)
         .input("sl", sql.Int, sl)
-        .input("st", sql.NVarChar, it.trangThai || "Đang mượn").query(`
+        .input("st", sql.NVarChar, "Đang mượn").query(`
           INSERT INTO ChiTietPhieuMuon(maCTM, maPM, maSach, soLuong, trangThai)
           VALUES (@id, @pm, @s, @sl, @st)
         `);
@@ -406,4 +406,267 @@ async function remaining(maPM) {
   }
   return out;
 }
-module.exports = { listAll, create, update, remove, suggest, remaining };
+async function createWithStockCheck({
+  maDG,
+  maTT = null,
+  ngayMuon = null,
+  ngayHenTra = null,
+  items = [],
+}) {
+  if (!maDG || !items?.length) throw new Error("Thiếu dữ liệu mượn.");
+
+  const pool = await getPool();
+  const tx = new sql.Transaction(pool);
+  await tx.begin();
+  try {
+    const maPM = "PM" + Date.now();
+
+    await new sql.Request(tx)
+      .input("id", sql.VarChar, maPM)
+      .input("dg", sql.VarChar, maDG)
+      .input("tt", sql.VarChar, maTT)
+      .input("nm", sql.DateTime, ngayMuon || new Date())
+      .input("nht", sql.DateTime, ngayHenTra || null).query(`
+        INSERT INTO PhieuMuon(maPM, maDG, maTT, ngayMuon, ngayHenTra)
+        VALUES (@id, @dg, @tt, @nm, @nht)
+      `);
+
+    for (const it of items) {
+      const n = Number(it.soLuong || 1);
+      const s = String(it.maSach);
+      if (!s || n < 1) continue;
+
+      // kiểm kho hiện tại
+      const r0 = await new sql.Request(tx)
+        .input("id", sql.VarChar, s)
+        .query(
+          `SELECT soLuong, ISNULL(soLuongMuon,0) AS soLuongMuon FROM Sach WHERE maSach=@id`
+        );
+      if (!r0.recordset.length) throw new Error(`Không tìm thấy sách ${s}`);
+      const row = r0.recordset[0];
+      const avail = Math.max(0, Number(row.soLuong) - Number(row.soLuongMuon));
+      if (n > avail) throw new Error(`Sách ${s} chỉ còn ${avail} bản.`);
+
+      // insert chi tiết
+      const maCT = "CTPM" + Math.floor(Math.random() * 1e9);
+      await new sql.Request(tx)
+        .input("id", sql.VarChar, maCT)
+        .input("pm", sql.VarChar, maPM)
+        .input("s", sql.VarChar, s)
+        .input("sl", sql.Int, n)
+        .input("st", sql.NVarChar, "Chờ lấy").query(`
+          INSERT INTO ChiTietPhieuMuon(maCTM, maPM, maSach, soLuong, trangThai)
+          VALUES (@id, @pm, @s, @sl, @st)
+        `);
+
+      // cộng soLuongMuon
+      await new sql.Request(tx)
+        .input("s", sql.VarChar, s)
+        .input("n", sql.Int, n).query(`
+          UPDATE Sach SET soLuongMuon = ISNULL(soLuongMuon,0) + @n WHERE maSach=@s
+        `);
+    }
+
+    await tx.commit();
+    return { maPM };
+  } catch (e) {
+    await tx.rollback();
+    throw e;
+  }
+}
+async function _resolveMaDGByMaTK(pool, maTK) {
+  // Thử DocGia.maTK nếu cột tồn tại
+  const hasCol = await pool.request().query(`
+    SELECT CASE WHEN COL_LENGTH('DocGia','maTK') IS NOT NULL THEN 1 ELSE 0 END AS hasCol
+  `);
+  const existed = hasCol.recordset[0]?.hasCol === 1;
+
+  if (existed) {
+    const rsDG = await pool
+      .request()
+      .input("maTK", sql.VarChar, maTK)
+      .query(`SELECT maDG FROM DocGia WHERE maTK = @maTK`);
+    if (rsDG.recordset.length) return rsDG.recordset[0].maDG;
+  }
+
+  // Fallback: qua bảng TaiKhoan (giả định có cột maDG)
+  const rsTK = await pool
+    .request()
+    .input("maTK", sql.VarChar, maTK)
+    .query(`SELECT maDG FROM TaiKhoan WHERE maTK = @maTK`);
+  if (rsTK.recordset.length) return rsTK.recordset[0].maDG;
+
+  return null;
+}
+
+/** Lịch sử mượn theo tài khoản */
+async function listByAccount({ maTK, q = "", status = "" }) {
+  const pool = await getPool();
+
+  const maDG = await _resolveMaDGByMaTK(pool, maTK);
+  if (!maDG) return [];
+
+  const rq = pool.request();
+  rq.input("maDG", sql.VarChar, maDG);
+  rq.input("k", sql.NVarChar, q ? `%${q}%` : "");
+  rq.input("status", sql.NVarChar, status || "");
+
+  const head = await rq.query(`
+    ;WITH PM_RAW AS (
+      SELECT
+        pm.maPM, pm.maDG, pm.maTT, pm.ngayMuon, pm.ngayHenTra,
+        CASE WHEN COL_LENGTH('PhieuMuon','trangThai') IS NOT NULL
+             THEN pm.trangThai ELSE NULL END AS trangThai_col
+      FROM PhieuMuon pm
+      WHERE pm.maDG = @maDG
+    ),
+    PM AS (
+      SELECT
+        R.maPM, R.maDG, R.maTT, R.ngayMuon, R.ngayHenTra,
+        COALESCE(
+          R.trangThai_col,
+          CASE
+            WHEN SUM(CASE WHEN c.trangThai IN (N'Đang mượn', N'Trả một phần') THEN 1 ELSE 0 END) > 0 THEN N'Đang mượn'
+            WHEN SUM(CASE WHEN c.trangThai = N'Đã hủy' THEN 1 ELSE 0 END) > 0 THEN N'Đã hủy'
+            WHEN COUNT(c.maCTM) = 0 THEN N'Chờ lấy'
+            ELSE N'Đã trả'
+          END
+        ) AS trangThai,
+        COUNT(c.maCTM) AS soSach
+      FROM PM_RAW R
+      LEFT JOIN ChiTietPhieuMuon c ON c.maPM = R.maPM
+      GROUP BY R.maPM, R.maDG, R.maTT, R.ngayMuon, R.ngayHenTra, R.trangThai_col
+    )
+    SELECT *
+    FROM PM
+    WHERE (@status = '' OR trangThai = @status)
+      AND (
+        @k = '' OR
+        maPM LIKE @k OR
+        EXISTS (
+          SELECT 1
+          FROM ChiTietPhieuMuon ct
+          LEFT JOIN Sach s ON s.maSach = ct.maSach
+          WHERE ct.maPM = PM.maPM AND (s.tieuDe LIKE @k OR s.maSach LIKE @k)
+        )
+      )
+    ORDER BY ngayMuon DESC, maPM DESC
+  `);
+
+  const list = head.recordset;
+  if (!list.length) return [];
+
+  const ids = list.map((x) => `'${x.maPM.replace(/'/g, "''")}'`).join(",");
+  const items = await pool.request().query(`
+    SELECT ct.maPM, ct.maSach, ct.soLuong, ct.trangThai, s.tieuDe
+    FROM ChiTietPhieuMuon ct
+    LEFT JOIN Sach s ON s.maSach = ct.maSach
+    WHERE ct.maPM IN (${ids})
+    ORDER BY ct.maPM
+  `);
+
+  const byPM = items.recordset.reduce((m, x) => {
+    (m[x.maPM] ||= []).push(x);
+    return m;
+  }, {});
+  return list.map((x) => ({ ...x, items: byPM[x.maPM] || [] }));
+}
+
+/** Độc giả tự hủy phiếu khi “Chờ lấy” */
+async function cancelByOwner({ maTK, maPM }) {
+  const pool = await getPool();
+  const tx = new sql.Transaction(pool);
+  await tx.begin();
+  try {
+    const maDG = await _resolveMaDGByMaTK(pool, maTK);
+    if (!maDG) {
+      await tx.rollback();
+      return false;
+    }
+
+    // Phiếu thuộc độc giả?
+    let rq = new sql.Request(tx);
+    const rsPM = await rq
+      .input("maPM", sql.VarChar, maPM)
+      .input("maDG", sql.VarChar, maDG).query(`
+        SELECT TOP 1
+          pm.maPM,
+          CASE WHEN COL_LENGTH('PhieuMuon','trangThai') IS NOT NULL
+               THEN pm.trangThai ELSE NULL END AS trangThai_col
+        FROM PhieuMuon pm
+        WHERE pm.maPM = @maPM AND pm.maDG = @maDG
+      `);
+    if (!rsPM.recordset.length) {
+      await tx.rollback();
+      return false;
+    }
+
+    const trangThaiCol = rsPM.recordset[0].trangThai_col;
+    let canCancel = false;
+
+    if (trangThaiCol !== null && trangThaiCol !== undefined) {
+      canCancel = trangThaiCol === "Chờ lấy";
+    } else {
+      // Fallback: mọi chi tiết đều 'Chờ lấy' => cho hủy
+      rq = new sql.Request(tx);
+      const rsChk = await rq.input("maPM", sql.VarChar, maPM).query(`
+          SELECT SUM(CASE WHEN ISNULL(trangThai,N'Chờ lấy') <> N'Chờ lấy' THEN 1 ELSE 0 END) AS cntDiff
+          FROM ChiTietPhieuMuon WHERE maPM = @maPM
+        `);
+      canCancel = (rsChk.recordset[0].cntDiff || 0) === 0;
+    }
+
+    if (!canCancel) {
+      await tx.rollback();
+      return false;
+    }
+
+    // (Tuỳ hệ thống) rollback soLuongMuon nếu đã cộng ở bước “Chờ lấy”
+    rq = new sql.Request(tx);
+    const rsItems = await rq
+      .input("maPM", sql.VarChar, maPM)
+      .query(`SELECT maSach, soLuong FROM ChiTietPhieuMuon WHERE maPM = @maPM`);
+    for (const it of rsItems.recordset) {
+      await new sql.Request(tx)
+        .input("maSach", sql.VarChar, it.maSach)
+        .input("sl", sql.Int, it.soLuong).query(`
+          UPDATE Sach
+          SET soLuongMuon = CASE WHEN ISNULL(soLuongMuon,0) >= @sl
+                                 THEN ISNULL(soLuongMuon,0) - @sl ELSE 0 END
+          WHERE maSach = @maSach
+        `);
+    }
+
+    // Cập nhật trạng thái huỷ
+    if (trangThaiCol !== null && trangThaiCol !== undefined) {
+      await new sql.Request(tx)
+        .input("maPM", sql.VarChar, maPM)
+        .query(`UPDATE PhieuMuon SET trangThai = N'Đã hủy' WHERE maPM = @maPM`);
+    } else {
+      await new sql.Request(tx)
+        .input("maPM", sql.VarChar, maPM)
+        .query(
+          `UPDATE ChiTietPhieuMuon SET trangThai = N'Đã hủy' WHERE maPM = @maPM`
+        );
+    }
+
+    await tx.commit();
+    return true;
+  } catch (e) {
+    try {
+      await tx.rollback();
+    } catch {}
+    throw e;
+  }
+}
+module.exports = {
+  listAll,
+  create,
+  update,
+  remove,
+  suggest,
+  remaining,
+  createWithStockCheck,
+  listByAccount,
+  cancelByOwner,
+};

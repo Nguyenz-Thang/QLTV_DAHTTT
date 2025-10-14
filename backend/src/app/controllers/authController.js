@@ -56,6 +56,7 @@ async function login(req, res) {
         .status(401)
         .json({ message: "Sai mật khẩu" + matKhau + user.matKhau });
     }
+    // console.log(user);
 
     const payload = {
       maTK: user.maTK,
@@ -63,6 +64,7 @@ async function login(req, res) {
       vaiTro: user.vaiTro,
       hoTen: user.hoTen || user.tenTT || "Chưa có thông tin",
       maTT: user.maTT[0],
+      maDG: user.maDG[0],
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 

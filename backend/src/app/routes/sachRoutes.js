@@ -6,33 +6,46 @@ const multer = require("multer");
 const sach = require("../controllers/sachControllers");
 const { authMiddleware, roleMiddleware } = require("../middleware/auth");
 
-// thư mục upload
-const uploadDir = path.join(__dirname, "../../uploads/tailieu");
-fs.mkdirSync(uploadDir, { recursive: true });
+// Tạo đủ thư mục upload
+const tailieuDir = path.join(__dirname, "../../uploads/tailieu");
+const anhbiaDir = path.join(__dirname, "../../uploads/anhbia");
+fs.mkdirSync(tailieuDir, { recursive: true });
+fs.mkdirSync(anhbiaDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => {
+    if (file.fieldname === "anhBia") return cb(null, anhbiaDir);
+    return cb(null, tailieuDir);
+  },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname || "").toLowerCase();
     cb(null, Date.now() + "-" + Math.random().toString(36).slice(2) + ext);
   },
 });
-const fileFilter = (_req, file, cb) => {
-  const ok = [
-    "application/pdf",
-    "application/epub+zip",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ].includes(file.mimetype);
-  cb(null, ok);
-};
+
+const ALLOWED_MIME = new Set([
+  // docs
+  "application/pdf",
+  "application/epub+zip",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  // images
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+const fileFilter = (_req, file, cb) =>
+  cb(null, ALLOWED_MIME.has(file.mimetype));
+
 const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 50 * 1024 * 1024 },
 });
 
-// public (hoặc bạn có thể yêu cầu đăng nhập tuỳ ý)
+// public
 router.get("/meta", sach.meta);
 router.get("/", sach.list);
 router.get("/:maSach", sach.detail);
@@ -42,14 +55,20 @@ router.post(
   "/",
   authMiddleware,
   roleMiddleware("Thủ thư", "Quản lý"),
-  upload.single("taiLieuOnl"),
+  upload.fields([
+    { name: "taiLieuOnl", maxCount: 1 },
+    { name: "anhBia", maxCount: 1 },
+  ]),
   sach.create
 );
 router.put(
   "/:maSach",
   authMiddleware,
   roleMiddleware("Thủ thư", "Quản lý"),
-  upload.single("taiLieuOnl"),
+  upload.fields([
+    { name: "taiLieuOnl", maxCount: 1 },
+    { name: "anhBia", maxCount: 1 },
+  ]),
   sach.update
 );
 router.delete(

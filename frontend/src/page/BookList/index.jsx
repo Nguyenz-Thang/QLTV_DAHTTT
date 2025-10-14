@@ -6,6 +6,7 @@ import { Search, BookOpen } from "lucide-react";
 
 const API = "http://localhost:5000/api/sach";
 const META_API = "http://localhost:5000/api/sach/meta";
+const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
 
 export default function BookListPage() {
   const { token, logout } = useContext(AuthContext) ?? {};
@@ -153,7 +154,15 @@ export default function BookListPage() {
                 onKeyDown={(e) => e.key === "Enter" && nav(`/sach/${b.maSach}`)}
               >
                 <div className={styles.cover}>
-                  <BookOpen />
+                  {b.anhBia ? (
+                    <img
+                      src={`${FILE_HOST}${b.anhBia}`}
+                      alt={b.tieuDe}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <BookOpen />
+                  )}
                 </div>
 
                 <div className={styles.info}>

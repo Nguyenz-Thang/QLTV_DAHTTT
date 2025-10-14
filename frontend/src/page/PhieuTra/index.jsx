@@ -120,24 +120,20 @@ export default function PhieuTra() {
 
   const choosePM = async (pm) => {
     try {
-      setForm((f) => ({
-        ...f,
+      const remainRes = await api.pmRemaining(pm.maPM);
+      const arr = remainRes.data || remainRes || [];
+      // pick mặc định: check tất cả với số lượng = conNo
+      const pickDefault = arr.reduce((m, it) => {
+        m[it.maSach] = { checked: true, soLuong: it.conNo, tinhTrang: "" };
+        return m;
+      }, {});
+      setForm({
         maPM: pm.maPM,
         pmInfo: pm,
-        remain: [],
-        pick: {},
-      }));
-      const remain = await api.pmRemaining(pm.maPM);
-      const arr = remain.data || remain || [];
-      const pickDefault = {};
-      for (const it of arr) {
-        pickDefault[it.maSach] = {
-          checked: true,
-          soLuong: it.conNo,
-          tinhTrang: "",
-        };
-      }
-      setForm((f) => ({ ...f, remain: arr, pick: pickDefault }));
+        ngayTra: todayStr(),
+        remain: arr,
+        pick: pickDefault,
+      });
       setSuggests([]);
       setSuggestQ(`${pm.maPM} - ${pm.hoTen}`);
     } catch (e) {
@@ -149,9 +145,14 @@ export default function PhieuTra() {
     setForm((f) => {
       const pick = { ...f.pick };
       for (const it of f.remain) {
+        const cur = pick[it.maSach] || {};
         pick[it.maSach] = {
-          ...(pick[it.maSach] || { soLuong: it.conNo, tinhTrang: "" }),
           checked,
+          soLuong: Math.max(
+            1,
+            Math.min(Number(cur.soLuong || it.conNo), it.conNo)
+          ),
+          tinhTrang: cur.tinhTrang || "",
         };
       }
       return { ...f, pick };
@@ -162,16 +163,18 @@ export default function PhieuTra() {
     e.preventDefault();
     if (!form.maPM) return alert("Chọn phiếu mượn trước.");
 
-    const items = form.remain
-      .map((it) => {
-        const p = form.pick[it.maSach];
-        if (!p?.checked) return null;
-        const qty = Math.max(1, Math.min(Number(p.soLuong || 0), it.conNo));
-        return {
-          maSach: it.maSach,
-          soLuong: qty,
-          tinhTrang: p.tinhTrang || "Đã trả",
-        };
+    // map remain -> conNo để kiểm soát số lượng
+    const remainMap = new Map(form.remain.map((it) => [String(it.maSach), it]));
+    const items = Object.entries(form.pick)
+      .filter(([, v]) => v && v.checked)
+      .map(([maSach, v]) => {
+        const it = remainMap.get(String(maSach));
+        if (!it) return null; // sách không còn trong remain
+        const qty = Math.max(1, Math.min(Number(v.soLuong || 0), it.conNo));
+        if (!qty) return null;
+        const obj = { maSach, soLuong: qty };
+        if ((v.tinhTrang || "").trim()) obj.tinhTrang = v.tinhTrang.trim();
+        return obj;
       })
       .filter(Boolean);
 
@@ -182,6 +185,8 @@ export default function PhieuTra() {
       await api.create({
         maPM: form.maPM.trim(),
         ngayTra: form.ngayTra,
+        // maTT: để backend tự lấy từ token; nếu backend yêu cầu thì gửi thêm:
+        // maTT: user?.maTT
         items,
       });
       setCreating(false);
@@ -303,13 +308,14 @@ export default function PhieuTra() {
                 value={suggestQ}
                 onChange={(e) => setSuggestQ(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") traCuuPhieuMuon(e.target.value);
-                }}
-                onBlur={() => {
-                  if (suggestQ.trim()) traCuuPhieuMuon(suggestQ);
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (suggestQ.trim()) traCuuPhieuMuon(suggestQ);
+                  }
                 }}
                 placeholder="VD: PM0001 / 6920xxx / Nguyễn Văn A"
               />
+
               {suggestQ && (
                 <button
                   className={styles.clear}
@@ -453,8 +459,8 @@ export default function PhieuTra() {
                         type="number"
                         min={1}
                         max={it.conNo}
-                        value={p.soLuong ?? it.conNo}
-                        disabled={!p.checked}
+                        value={form.pick[it.maSach]?.soLuong ?? it.conNo}
+                        disabled={!form.pick[it.maSach]?.checked}
                         onChange={(e) => {
                           const v = Math.max(
                             1,
@@ -464,7 +470,14 @@ export default function PhieuTra() {
                             ...f,
                             pick: {
                               ...f.pick,
-                              [it.maSach]: { ...p, checked: true, soLuong: v },
+                              [it.maSach]: {
+                                ...(f.pick[it.maSach] || {
+                                  checked: true,
+                                  tinhTrang: "",
+                                }),
+                                checked: true,
+                                soLuong: v,
+                              },
                             },
                           }));
                         }}

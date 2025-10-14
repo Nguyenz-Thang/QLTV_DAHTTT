@@ -19,46 +19,72 @@
   padding: 16px;
 }
 
-/* ----- book header ----- */
+/* ===== Book header (hero) ===== */
 .hero {
   display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 14px;
+  grid-template-columns: 120px 1fr; /* bìa | thông tin */
+  gap: 16px;
   background: linear-gradient(135deg, #f3f6ff, #e2e9ff);
   border: 1px solid #e5e9ff;
   border-radius: 14px;
   padding: 14px;
   box-shadow: 0 8px 26px rgba(34, 55, 113, 0.08);
 }
-.cover {
-  width: 90px;
-  height: 90px;
+
+/* Khung bìa 3:4 */
+.cover,
+.coverWrap {
+  width: 100%; /* cột trái đã cố định 120px */
+  aspect-ratio: 3 / 4;
   border-radius: 12px;
-  background: linear-gradient(135deg, #dde6ff, #cfd8ff);
+  overflow: hidden;
+  background: #f3f4f6;
   display: grid;
   place-items: center;
-  color: #223771;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  svg {
+    width: 42%;
+    height: 42%;
+    opacity: 0.55;
+    color: #223771;
+  }
 }
-.info {
+
+.info,
+.metaWrap {
   min-width: 0;
 }
+
 .title {
   margin: 0 0 6px;
   font-size: 22px;
   color: #223771;
+  line-height: 1.25;
 }
-.desc {
-  margin: 0;
+.desc,
+.subtitle {
+  margin: 0 0 10px;
   color: #3f4e88;
   font-size: 14px;
 }
-.meta {
+
+/* Hàng pill + nút tải */
+.meta,
+.chips {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
+  align-items: center; /* canh giữa theo chiều dọc */
   gap: 8px;
 }
-.pill {
+.pill,
+.chip {
   font-size: 12px;
   color: #3f4e88;
   background: #eef2ff;
@@ -66,8 +92,11 @@
   padding: 2px 10px;
   border-radius: 999px;
 }
+
+/* Nút tải TÀI LIỆU (giữ kiểu cũ – nút chữ, đẩy sang phải) */
 .download {
-  margin-top: 10px;
+  margin-left: 30px;
+  margin-top: 30px;
   display: inline-flex;
   gap: 8px;
   align-items: center;
@@ -83,7 +112,19 @@
   border-color: #fd7e14;
 }
 
-/* ----- comments ----- */
+/* Nút tròn chỉ icon (nếu cần dùng nơi khác) */
+.dlIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+/* ===== Comments & misc (giữ nguyên) ===== */
 .comments {
   margin-top: 18px;
 }
@@ -120,6 +161,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-weight: 600;
 }
 .primary:hover {
   background: #fd7e14;
@@ -179,13 +221,11 @@
   color: #7a86bf;
   margin-left: 4px;
 }
-
 .content {
   margin: 4px 0 6px;
   color: #2d356c;
 }
 
-/* actions under each comment */
 .actions {
   display: flex;
   gap: 8px;
@@ -208,7 +248,6 @@
   padding: 0;
 }
 
-/* inline editors */
 .inlineEditor {
   margin-top: 6px;
 }
@@ -222,10 +261,8 @@
   color: #223771;
 }
 
-/* three-dots menu */
 .menuWrap {
   position: relative;
-  //   margin-left: auto;
 }
 .menuBtn {
   background: transparent;
@@ -239,7 +276,6 @@
   background: rgba(34, 55, 113, 0.06);
   color: #223771;
 }
-
 .menu {
   position: absolute;
   right: 0;
@@ -280,4 +316,57 @@
 }
 .menuItemDanger:hover {
   background: #ffecee;
+}
+
+.borrowBox {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #eef1ff;
+  border-radius: 10px;
+  background: #f9fbff;
+}
+.borrowRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.avail {
+  color: #223771;
+}
+.qty,
+.due {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty input,
+.due input {
+  width: 120px;
+  border: 1px solid #ccd5f0;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.note {
+  margin-top: 6px;
+  color: #b00020;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .cover,
+  .coverWrap {
+    width: 60vw;
+    max-width: 280px;
+  }
+  .download {
+    margin-left: 0;
+  } /* mobile: không đẩy phải */
 }
