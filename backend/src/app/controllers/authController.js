@@ -52,9 +52,7 @@ async function login(req, res) {
 
     const ok = await bcrypt.compare(matKhau, user.matKhau);
     if (!ok) {
-      return res
-        .status(401)
-        .json({ message: "Sai mật khẩu" + matKhau + user.matKhau });
+      return res.status(401).json({ message: "Sai mật khẩu" });
     }
     // console.log(user);
 
