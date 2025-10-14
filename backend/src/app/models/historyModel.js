@@ -15,10 +15,11 @@ async function listByAccount({
   if (dateFrom) where.push("pm.ngayMuon >= @dateFrom");
   if (dateTo) where.push("pm.ngayMuon < DATEADD(DAY, 1, @dateTo)");
 
-  // trạng thái
+  // status: all | borrowing | returned | pending
   if (status === "pending") {
     where.push("ctm.trangThai = N'Chờ lấy'");
   } else if (status === "borrowing") {
+    // loại 'Chờ lấy' + so sánh với rt
     where.push(
       "ctm.trangThai <> N'Chờ lấy' AND ISNULL(rt.soLuongTra,0) < ctm.soLuong"
     );
@@ -48,7 +49,6 @@ async function listByAccount({
       ISNULL(rt.soLuongTra,0)        AS soLuongTra,
       rt.ngayTraCuoi                 AS ngayTra,
       rt.tinhTrangCuoi               AS tinhTrang,
-      -- nếu chi tiết đang "Chờ lấy" thì hiển thị "Chờ lấy"
       CASE
         WHEN ctm.trangThai = N'Chờ lấy' THEN N'Chờ lấy'
         WHEN ISNULL(rt.soLuongTra,0) >= ctm.soLuong THEN N'Đã trả'
@@ -66,7 +66,7 @@ async function listByAccount({
     ORDER BY pm.ngayMuon DESC, pm.maPM DESC, s.tieuDe
     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
-    -- total
+    -- ************ FIX Ở ĐÂY: thêm LEFT JOIN rt ************
     WITH rt AS (
       SELECT pt.maPM, ctpt.maSach,
              SUM(ctpt.soLuong) AS soLuongTra
@@ -79,6 +79,7 @@ async function listByAccount({
     JOIN DocGia dg ON dg.maDG = tk.maDG
     JOIN PhieuMuon pm ON pm.maDG = dg.maDG
     JOIN ChiTietPhieuMuon ctm ON ctm.maPM = pm.maPM
+    LEFT JOIN rt ON rt.maPM = pm.maPM AND rt.maSach = ctm.maSach   -- 👈 thêm dòng này
     WHERE tk.maTK = @maTK
     ${whereSql};
   `;
