@@ -55,6 +55,21 @@ export default function DocGia() {
       SDT: f.get("SDT")?.trim() || null,
       diaChi: f.get("diaChi")?.trim() || null,
     };
+    if (!editing?.maDG) {
+      payload.tenDangNhap = f.get("tenDangNhap")?.trim();
+      payload.matKhau = f.get("matKhau")?.trim();
+      if (!payload.tenDangNhap || !payload.matKhau) {
+        alert("Nhập tên đăng nhập và mật khẩu cho tài khoản độc giả.");
+        setSaving(false);
+        return;
+      }
+    } else {
+      // sửa -> tuỳ chọn
+      const u = f.get("tenDangNhap")?.trim();
+      const p = f.get("matKhau")?.trim();
+      if (u) payload.tenDangNhap = u;
+      if (p) payload.matKhau = p;
+    }
     if (!payload.hoTen) return alert("Vui lòng nhập họ tên");
     if (payload.email && !/^\S+@\S+\.\S+$/.test(payload.email))
       return alert("Email không hợp lệ");
@@ -125,6 +140,7 @@ export default function DocGia() {
                 <th>Lớp</th>
                 <th>Email</th>
                 <th>SDT</th>
+                <th>Tên đăng nhập</th>
                 <th style={{ width: 120 }}>Thao tác</th>
               </tr>
             </thead>
@@ -138,6 +154,7 @@ export default function DocGia() {
                   <td>{r.lop || "—"}</td>
                   <td>{r.email || "—"}</td>
                   <td>{r.SDT || "—"}</td>
+                  <td>{r.tenDangNhap || "—"}</td>
                   <td className={styles.actions}>
                     <button
                       className={styles.edit}
@@ -248,7 +265,27 @@ export default function DocGia() {
               rows="2"
               defaultValue={editing.diaChi || ""}
             />
-
+            {/* <h4 style={{ marginTop: 10 }}>Tài khoản</h4> */}
+            <div className={styles.grid2}>
+              <div>
+                <label>Tên đăng nhập</label>
+                <input
+                  name="tenDangNhap"
+                  defaultValue={editing.tenDangNhap || ""}
+                  placeholder="vd: msv123456"
+                  required
+                />
+              </div>
+              <div>
+                <label>Mật khẩu</label>
+                <input
+                  name="matKhau"
+                  type="password"
+                  placeholder="Nhập mật khẩu"
+                  required
+                />
+              </div>
+            </div>
             <div className={styles.formActions}>
               <button
                 type="button"
