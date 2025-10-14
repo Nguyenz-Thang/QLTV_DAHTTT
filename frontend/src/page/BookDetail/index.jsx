@@ -14,6 +14,8 @@ import {
 
 const API = "http://localhost:5000/api/sach";
 const CMT_API = "http://localhost:5000/api/binhluan";
+const QUICK_BORROW_API = "http://localhost:5000/api/phieumuon/quick";
+const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
 
 export default function BookDetail() {
   const { maSach } = useParams();
@@ -148,7 +150,63 @@ export default function BookDetail() {
     if (!res.ok) return alert(data.message || "Không xoá được");
     await loadComments();
   }
+  const [qty, setQty] = useState(1);
+  const [due, setDue] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().slice(0, 10);
+  });
+  const [borrowing, setBorrowing] = useState(false);
 
+  const available = Math.max(
+    0,
+    Number(book?.soLuong || 0) - Number(book?.soLuongMuon || 0)
+  );
+
+  async function quickBorrow() {
+    if (!token) {
+      return nav("/login", { replace: true });
+    }
+    if (available <= 0) {
+      return alert("Sách tạm hết bản để mượn.");
+    }
+    if (qty < 1 || qty > available) {
+      return alert(`Số lượng phải từ 1 đến ${available}.`);
+    }
+    const ok = window.confirm(
+      `Xác nhận mượn "${book.tieuDe}" với số lượng ${qty}?`
+    );
+    if (!ok) return;
+    setBorrowing(true);
+
+    try {
+      const res = await fetch(QUICK_BORROW_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          maSach,
+          soLuong: qty,
+          ngayHenTra: due, // optional; backend có thể mặc định +7 ngày
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Mượn sách thất bại.");
+      alert("Đã tạo phiếu mượn thành công!");
+      // reload sách (để cập nhật soLuongMuon)
+      const r2 = await fetch(`${API}/${maSach}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const d2 = await r2.json();
+      setBook(d2.data || d2);
+    } catch (e) {
+      alert(e.message || "Không thể mượn sách.");
+    } finally {
+      setBorrowing(false);
+    }
+  }
   // ===== UI =====
   if (loading) return <div className={styles.page}>Đang tải…</div>;
   if (err)
@@ -171,37 +229,90 @@ export default function BookDetail() {
       </div>
       <div className={styles.page}>
         <section className={styles.hero}>
-          <div className={styles.cover}>
-            <BookOpen />
+          <div className={styles.coverWrap}>
+            {book.anhBia ? (
+              <img src={`${FILE_HOST}${book.anhBia}`} alt={book.tieuDe} />
+            ) : (
+              <BookOpen />
+            )}
           </div>
-          <div className={styles.info}>
+
+          <div className={styles.metaWrap}>
             <h1 className={styles.title}>{book.tieuDe}</h1>
-            {book.tomTat && <p className={styles.desc}>{book.tomTat}</p>}
-            <div className={styles.meta}>
+            {book.tomTat && <p className={styles.subtitle}>{book.tomTat}</p>}
+
+            <div className={styles.chips}>
               {book.tenTG && (
-                <span className={styles.pill}>Tác giả: {book.tenTG}</span>
+                <span className={styles.chip}>Tác giả: {book.tenTG}</span>
               )}
-              {(book.tenTL || book.theLoai) && (
-                <span className={styles.pill}>
-                  Thể loại: {book.tenTL || book.theLoai}
-                </span>
+              {book.tenTL && (
+                <span className={styles.chip}>Thể loại: {book.tenTL}</span>
               )}
               {book.tenNXB && (
-                <span className={styles.pill}>NXB: {book.tenNXB}</span>
+                <span className={styles.chip}>NXB: {book.tenNXB}</span>
               )}
             </div>
+
+            {/* Nút tải tài liệu ONLINE – giữ nguyên class .download cũ */}
             {book.taiLieuOnl && (
               <a
                 className={styles.download}
-                href={`http://localhost:5000${book.taiLieuOnl}`}
+                href={`${FILE_HOST}${book.taiLieuOnl}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                <Download />
+                <Download style={{ marginRight: 1 }} />
               </a>
             )}
           </div>
         </section>
+        <div className={styles.borrowBox}>
+          <div className={styles.borrowRow}>
+            <div className={styles.avail}>
+              Còn lại: <b>{available}</b> bản
+            </div>
+            <div className={styles.qty}>
+              SL mượn:
+              <input
+                type="number"
+                min={1}
+                max={available || 1}
+                value={qty}
+                onChange={(e) =>
+                  setQty(
+                    Math.max(
+                      1,
+                      Math.min(available || 1, Number(e.target.value || 1))
+                    )
+                  )
+                }
+                disabled={available <= 0 || borrowing}
+                readOnly
+              />
+            </div>
+            <div className={styles.due}>
+              Hẹn trả:
+              <input
+                type="date"
+                value={due}
+                onChange={(e) => setDue(e.target.value)}
+                disabled={borrowing}
+              />
+            </div>
+            <button
+              className={styles.primary}
+              onClick={quickBorrow}
+              disabled={available <= 0 || borrowing}
+            >
+              {borrowing ? "Đang mượn…" : "Mượn sách"}
+            </button>
+          </div>
+          {available <= 0 && (
+            <div className={styles.note}>
+              Sách tạm hết, vui lòng quay lại sau.
+            </div>
+          )}
+        </div>
 
         <section className={styles.comments}>
           <h2>Bình luận</h2>

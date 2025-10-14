@@ -52,6 +52,7 @@ async function create({
   soLuong,
   maTG,
   taiLieuOnl,
+  anhBia, // NEW
 }) {
   const pool = await getPool();
   await pool
@@ -63,15 +64,16 @@ async function create({
     .input("maNXB", sql.NVarChar, maNXB ?? null)
     .input("soLuong", sql.Int, soLuong ?? 0)
     .input("maTG", sql.NVarChar, maTG ?? null)
-    .input("taiLieuOnl", sql.NVarChar, taiLieuOnl ?? null).query(`
-      INSERT INTO Sach (maSach, tieuDe, tomTat, maTL, maNXB, soLuong, soLuongMuon, taiLieuOnl, maTG)
-      VALUES (@maSach, @tieuDe, @tomTat, @maTL, @maNXB, @soLuong, 0, @taiLieuOnl, @maTG)
+    .input("taiLieuOnl", sql.NVarChar, taiLieuOnl ?? null)
+    .input("anhBia", sql.NVarChar, anhBia ?? null).query(`
+      INSERT INTO Sach (maSach, tieuDe, tomTat, maTL, maNXB, soLuong, soLuongMuon, taiLieuOnl, maTG, anhBia)
+      VALUES (@maSach, @tieuDe, @tomTat, @maTL, @maNXB, @soLuong, 0, @taiLieuOnl, @maTG, @anhBia)
     `);
 }
 
 async function update(
   maSach,
-  { tieuDe, tomTat, maTL, maNXB, soLuong, maTG, taiLieuOnl }
+  { tieuDe, tomTat, maTL, maNXB, soLuong, maTG, taiLieuOnl, anhBia } // NEW
 ) {
   const pool = await getPool();
   const q = `
@@ -83,6 +85,7 @@ async function update(
       soLuong = @soLuong,
       maTG = @maTG
       ${taiLieuOnl !== undefined ? ", taiLieuOnl = @taiLieuOnl" : ""}
+      ${anhBia !== undefined ? ", anhBia = @anhBia" : ""}
     WHERE maSach = @maSach
   `;
   const req = pool
@@ -94,11 +97,13 @@ async function update(
     .input("maNXB", sql.NVarChar, maNXB ?? null)
     .input("soLuong", sql.Int, soLuong ?? 0)
     .input("maTG", sql.NVarChar, maTG ?? null);
+
   if (taiLieuOnl !== undefined)
     req.input("taiLieuOnl", sql.NVarChar, taiLieuOnl);
+  if (anhBia !== undefined) req.input("anhBia", sql.NVarChar, anhBia);
+
   await req.query(q);
 }
-
 async function remove(maSach) {
   const pool = await getPool();
   await pool

@@ -21,6 +21,9 @@ import ThuThu from "../../page/ThuThu";
 import DocGia from "../../page/DocGia";
 import Accounts from "../../page/Accounts";
 import BookDetail from "../../page/BookDetail";
+import ThongKe from "../../page/ThongKe";
+import HistoryPage from "../../page/HistoryPage";
+// import MyBorrows from "../../page/BorrowHistory/BorrowHistory";
 // import UseState from "@/pages/UseState";
 
 function AppRoutes() {
@@ -56,6 +59,9 @@ function AppRoutes() {
               <Route path="/admin/docgia" element={<DocGia />} />
               <Route path="/admin/accounts" element={<Accounts />} />
               <Route path="/sach/:maSach" element={<BookDetail />} />
+              <Route path="/admin/thong-ke" element={<ThongKe />} />
+              <Route path="/history" element={<HistoryPage />} />
+              {/* <Route path="/admin/ls-muon" element={<MyBorrows />} /> */}
             </Route>
           </Route>
         </Routes>
