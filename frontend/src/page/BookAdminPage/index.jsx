@@ -133,6 +133,7 @@ export default function BookAdminPage() {
           <thead>
             <tr>
               <th>Mã</th>
+              <th>Ảnh</th>
               <th>Tiêu đề</th>
               <th>Thể loại</th>
               <th>Tác giả</th>
@@ -147,6 +148,22 @@ export default function BookAdminPage() {
             {list.map((r) => (
               <tr key={r.maSach}>
                 <td>{r.maSach}</td>
+                <td>
+                  {r.anhBia ? (
+                    <img
+                      className={styles.thumb}
+                      src={
+                        /^https?:\/\//.test(r.anhBia)
+                          ? r.anhBia
+                          : `${FILE_HOST}${r.anhBia}`
+                      }
+                      alt={r.tieuDe || "Ảnh bìa"}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className={styles.noThumb}>—</div>
+                  )}
+                </td>
                 <td>{r.tieuDe}</td>
                 <td>{r.tenTL}</td>
                 <td>{r.tenTG}</td>

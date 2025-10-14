@@ -5,9 +5,9 @@ const history = require("../controllers/historyController");
 // ✅ ĐỂ TRƯỚC
 router.get("/me", authMiddleware, history.listMyHistory);
 
+router.post("/cancel/:maPM", authMiddleware, history.cancelPendingBorrow);
 // ✅ ĐỂ SAU
 router.get("/:maTK", authMiddleware, history.listByAccount);
-
 // (nếu muốn hạn quyền admin):
 // router.get("/:maTK", authMiddleware, roleMiddleware("Quản lý","Thủ thư"), history.listByAccount);
 
