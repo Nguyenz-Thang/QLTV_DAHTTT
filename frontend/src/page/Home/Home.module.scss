@@ -27,17 +27,18 @@
 }
 
 .text h1 {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   font-size: 28px;
   line-height: 1.25;
 }
 
 .text p {
-  margin: 0;
-  color: #3f4e88;
+  margin: 10px 0;
+  color: #041041;
   font-size: 15px;
+  line-height: 1.6;
+  text-align: justify;
 }
-
 /* optional nút CTA nếu dùng */
 .cta {
   display: inline-block;
@@ -57,6 +58,9 @@
   height: 340px;
   background: url("../../assets/img/image.png") center/cover no-repeat;
   border-radius: 12px;
+  object-fit: cover;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 /* Responsive */
 @media (max-width: 900px) {
