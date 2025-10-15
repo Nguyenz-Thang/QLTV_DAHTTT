@@ -104,7 +104,7 @@ export default function ThongKe() {
             />
           </div>
 
-          {/* Biểu đồ mượn theo tháng (mini bar chart CSS) */}
+          {/* Biểu đồ mượn theo tháng (mini bar chart CSS)
           <section className={styles.block}>
             <div className={styles.blockHead}>
               <div className={styles.blockTitle}>
@@ -112,7 +112,7 @@ export default function ThongKe() {
               </div>
             </div>
             <MiniBarChart data={monthly} />
-          </section>
+          </section> */}
 
           {/* Top sách mượn nhiều */}
           <section className={styles.block}>
