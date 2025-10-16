@@ -213,13 +213,14 @@ async function deletePhieuTra(maPT) {
 
   try {
     await trx.begin();
-    const rq = new sql.Request(trx);
 
-    const items = await rq.input("maPT", sql.VarChar, maPT).query(`
-      SELECT maSach, soLuong FROM ChiTietPhieuTra WHERE maPT=@maPT
-    `);
+    // lấy các dòng chi tiết để hoàn lại soLuongMuon
+    const items = await new sql.Request(trx)
+      .input("maPT", sql.VarChar, maPT)
+      .query(`SELECT maSach, soLuong FROM ChiTietPhieuTra WHERE maPT=@maPT`);
 
-    const existed = await rq
+    // kiểm tra tồn tại header
+    const existed = await new sql.Request(trx)
       .input("maPT", sql.VarChar, maPT)
       .query(`SELECT 1 FROM PhieuTra WHERE maPT=@maPT`);
     if (!existed.recordset.length) {
@@ -227,9 +228,9 @@ async function deletePhieuTra(maPT) {
       return false;
     }
 
-    // hoàn lại soLuongMuon cho các sách đã trừ
+    // hoàn lại số lượng mượn cho từng sách
     for (const it of items.recordset) {
-      await rq
+      await new sql.Request(trx)
         .input("maSach", sql.VarChar, it.maSach)
         .input("soLuong", sql.Int, it.soLuong).query(`
           UPDATE Sach
@@ -238,10 +239,13 @@ async function deletePhieuTra(maPT) {
         `);
     }
 
-    await rq
+    // xoá chi tiết (thực ra ON DELETE CASCADE cũng xoá, nhưng để chắc chắn)
+    await new sql.Request(trx)
       .input("maPT", sql.VarChar, maPT)
       .query(`DELETE FROM ChiTietPhieuTra WHERE maPT=@maPT`);
-    await rq
+
+    // xoá header
+    await new sql.Request(trx)
       .input("maPT", sql.VarChar, maPT)
       .query(`DELETE FROM PhieuTra WHERE maPT=@maPT`);
 
