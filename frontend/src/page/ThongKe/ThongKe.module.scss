@@ -28,12 +28,13 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: 320px;
+  width: 380px;
   max-width: 100%;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 6px 8px 6px 36px;
+  margin-left: auto;
 }
 
 .searchIcon {
@@ -65,41 +66,62 @@
   line-height: 24px;
   cursor: pointer;
 }
-
-/* Bộ lọc ngày */
+/* --- Bộ lọc theo ngày (ống input + nút Áp dụng) --- */
+/* --- Bộ lọc theo ngày: label & input thẳng hàng --- */
 .dateRange {
+  margin: 12px 0 18px;
   display: flex;
+  align-items: center; /* canh hàng ngang */
   gap: 12px;
-  align-items: center;
   flex-wrap: wrap;
+  background-color: white;
+  border: 1px solid #e3e9ff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 26px rgba(34, 55, 113, 0.08);
 }
 
+/* Label hiển thị chữ và input trên cùng một hàng */
 .dateRange label {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-size: 14px;
-  color: #374151;
+  display: flex; /* chữ và input cùng hàng */
+  align-items: center; /* canh giữa theo trục dọc */
+  gap: 8px;
+  margin: 0;
+  font-weight: 600;
+  color: #223771;
 }
 
+/* Ô date */
 .dateRange input[type="date"] {
   height: 36px;
-  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  border: 1px solid #ccd5f0;
   border-radius: 10px;
-  padding: 0 10px;
   background: #fff;
-  color: #111827;
+  color: #223771;
+  outline: none;
 }
 
+.dateRange input[type="date"]:focus {
+  border-color: #8aa0ff;
+  box-shadow: 0 0 0 3px rgba(138, 160, 255, 0.25);
+}
+
+/* Nút Lọc */
 .dateRange button {
   height: 36px;
-  border: none;
-  border-radius: 10px;
   padding: 0 14px;
-  background: #2563eb;
+  border-radius: 10px;
+  background: #223771;
   color: #fff;
-  font-weight: 600;
+  border: 1px solid #223771;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.dateRange button:hover {
+  background: #fd7e14;
+  border-color: #fd7e14;
 }
 
 /* Trạng thái */
