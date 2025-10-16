@@ -49,9 +49,23 @@ exports.deletePhieuMuon = async (req, res) => {
     res.json({ success: true, message: "Đã xoá phiếu mượn" });
   } catch (e) {
     console.error(e);
-    res.status(400).json({ message: e.message || "Không thể xoá" });
+    // Lỗi ràng buộc FK (SQL Server thường là 547)
+    const code = e.number || e.originalError?.number;
+    const isFK =
+      code === 547 || /REFERENCE constraint/i.test(String(e.message || ""));
+    if (isFK) {
+      return res.status(409).json({
+        message:
+          "Không thể xoá phiếu mượn vì đã phát sinh phiếu trả liên quan. " +
+          "Vui lòng xoá/thu hồi các phiếu trả của phiếu mượn này trước.",
+      });
+    }
+    return res
+      .status(400)
+      .json({ message: e.message || "Không thể xoá phiếu mượn" });
   }
 };
+
 // NEW: suggest theo maPM / MSSV / tên
 exports.suggest = async (req, res) => {
   try {
