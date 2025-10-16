@@ -4,6 +4,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { Search, BookOpen, Clock } from "lucide-react";
 
 const API = "http://localhost:5000/api/thongke";
+const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
 
 /** SVG fallback bìa sách (tạo ảnh với chữ cái đầu) */
 function svgCoverFallback(title = "", w = 180, h = 240) {
@@ -32,19 +33,13 @@ function svgCoverFallback(title = "", w = 180, h = 240) {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
-/** Lựa URL ảnh bìa khả dụng */
+/** Lựa URL ảnh bìa khả dụng (tự ghép FILE_HOST nếu là path tương đối) */
 function resolveCoverURL(book) {
-  const cands = [
-    book?.anhBia,
-    book?.hinhAnh,
-    book?.image,
-    book?.taiLieuOnl,
-    `/covers/${book?.maSach}.jpg`,
-    `/covers/${book?.maSach}.png`,
-    `/images/books/${book?.maSach}.jpg`,
-    `/images/books/${book?.maSach}.png`,
-  ].filter(Boolean);
-  return cands[0] || "";
+  const raw = book?.anhBia || book?.hinhAnh || book?.image || "";
+  if (!raw) return "";
+  const url = String(raw);
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${FILE_HOST}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 /* ------------ Subcomponent: Top 3 sách --------------- */
@@ -88,7 +83,7 @@ function TopBooks({ data = [] }) {
 export default function ThongKe() {
   const { token } = useContext(AuthContext) ?? {};
   const [data, setData] = useState(null);
-  const [q, setQ] = useState("");
+  const [search, setSearch] = useState(""); // tìm trong bảng chi tiết
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -127,17 +122,30 @@ export default function ThongKe() {
   };
   const topBooks = (data?.topBooks || []).slice(0, 3);
 
-  const filteredTop = useMemo(() => {
-    const k = q.trim().toLowerCase();
-    if (!k) return topBooks;
-    return topBooks.filter(
-      (x) =>
-        String(x.maSach).toLowerCase().includes(k) ||
-        String(x.tieuDe || "")
+  // Lọc bảng "Danh sách chi tiết mượn sách"
+  const filteredDetails = useMemo(() => {
+    const k = (search || "").trim().toLowerCase();
+    if (!k) return details;
+    return details.filter((r) => {
+      return (
+        String(r.maPM || "")
+          .toLowerCase()
+          .includes(k) ||
+        String(r.maSach || "")
+          .toLowerCase()
+          .includes(k) ||
+        String(r.tenSach || "")
+          .toLowerCase()
+          .includes(k) ||
+        String(r.tenThuThu || "")
+          .toLowerCase()
+          .includes(k) ||
+        String(r.tenDocGia || "")
           .toLowerCase()
           .includes(k)
-    );
-  }, [q, topBooks]);
+      );
+    });
+  }, [details, search]);
 
   async function handleFilter() {
     if (!from || !to) {
@@ -168,41 +176,6 @@ export default function ThongKe() {
       {/* Header */}
       <div className={styles.header}>
         <h2>Thống kê thư viện</h2>
-
-        <div className={styles.searchBox}>
-          <Search className={styles.searchIcon} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm top sách theo mã/tiêu đề…"
-          />
-          {q && (
-            <button className={styles.clear} onClick={() => setQ("")}>
-              ×
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Bộ lọc theo ngày */}
-      <div className={styles.dateRange}>
-        <label>
-          Từ:
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
-        </label>
-        <label>
-          Đến:
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </label>
-        <button onClick={handleFilter}>Lọc</button>
       </div>
 
       {loading && <div className={styles.loading}>Đang tải…</div>}
@@ -236,7 +209,7 @@ export default function ThongKe() {
                 <BookOpen /> Top 3 sách được mượn nhiều nhất
               </div>
             </div>
-            <TopBooks data={filteredTop} />
+            <TopBooks data={topBooks} />
           </section>
 
           {/* Bảng chi tiết mượn */}
@@ -245,6 +218,43 @@ export default function ThongKe() {
               <div className={styles.blockHead}>
                 <div className={styles.blockTitle}>
                   <BookOpen /> Danh sách chi tiết mượn sách
+                </div>
+              </div>
+              {/* Bộ lọc theo ngày */}
+              <div className={styles.dateRange}>
+                <label>
+                  Từ:
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Đến:
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                  />
+                </label>
+                <button onClick={handleFilter}>Lọc</button>
+                {/* Thanh tìm kiếm: lọc bảng chi tiết mượn */}
+                <div className={styles.searchBox}>
+                  <Search className={styles.searchIcon} />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Tìm trong danh sách mượn: mã PM / mã sách / tiêu đề / thủ thư / độc giả…"
+                  />
+                  {search && (
+                    <button
+                      className={styles.clear}
+                      onClick={() => setSearch("")}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
               <table className={styles.table}>
@@ -260,7 +270,7 @@ export default function ThongKe() {
                   </tr>
                 </thead>
                 <tbody>
-                  {details.map((r, i) => (
+                  {filteredDetails.map((r, i) => (
                     <tr key={i}>
                       <td>{r.maSach}</td>
                       <td>{r.tenSach}</td>
@@ -279,6 +289,16 @@ export default function ThongKe() {
                       <td style={{ textAlign: "right" }}>{r.soLuong}</td>
                     </tr>
                   ))}
+                  {filteredDetails.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan="7"
+                        style={{ textAlign: "center", padding: 12 }}
+                      >
+                        Không có bản ghi phù hợp.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </section>
