@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useSachApi } from "../../api/sachApi"; // 👈 hook API
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSachApi } from "../../api/sachApi";
 import styles from "./BookAdminPage.module.scss";
 import {
   Download,
@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import Modal from "../../components/Modal";
 
-// 👇 Host của backend để hiển thị file tĩnh (uploads)
 const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
 
 export default function BookAdminPage() {
@@ -23,12 +22,15 @@ export default function BookAdminPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
+  // Tìm kiếm
+  const [q, setQ] = useState("");
+  const searchRef = useRef(null);
+
   // Preview ảnh bìa khi thêm/sửa
   const [coverPreview, setCoverPreview] = useState("");
   const onPickAnhBia = (e) => {
     const f = e.target.files?.[0];
     if (!f) {
-      // Không chọn file mới -> hiện lại ảnh cũ (nếu có)
       setCoverPreview(editing?.anhBia ? FILE_HOST + editing.anhBia : "");
       return;
     }
@@ -58,7 +60,7 @@ export default function BookAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mỗi lần mở form (editing thay đổi) → đồng bộ preview ảnh bìa hiện có
+  // đồng bộ preview khi mở form
   useEffect(() => {
     if (editing?.anhBia) setCoverPreview(FILE_HOST + editing.anhBia);
     else setCoverPreview("");
@@ -69,15 +71,15 @@ export default function BookAdminPage() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    const fd = new FormData(e.target);
 
-    const fd = new FormData(e.target); // KHÔNG set Content-Type
-    // Nếu đang SỬA mà không chọn file ảnh mới → gửi kèm ảnh cũ
+    // giữ ảnh cũ nếu không chọn mới
     const fileAnh = e.target.elements["anhBia"]?.files?.[0];
     if (editing?.maSach && !fileAnh && editing?.anhBia) {
-      fd.append("anhBiaOld", editing.anhBia); // gửi path tương đối để backend giữ nguyên
+      fd.append("anhBiaOld", editing.anhBia);
     }
 
-    // (Tuỳ chọn) giữ tài liệu cũ nếu không chọn file mới
+    // giữ tài liệu cũ nếu không chọn mới
     const fileTL = e.target.elements["taiLieuOnl"]?.files?.[0];
     if (editing?.maSach && !fileTL && editing?.taiLieuOnl) {
       fd.append("taiLieuOnlOld", editing.taiLieuOnl);
@@ -106,6 +108,26 @@ export default function BookAdminPage() {
     }
   };
 
+  // ====== TÌM KIẾM (không phân biệt hoa/thường & dấu) ======
+  const unaccent = (s = "") =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const filtered = useMemo(() => {
+    if (!q) return list;
+    const key = unaccent(q);
+    return list.filter((r) => {
+      const haystack = [r.maSach, r.tieuDe, r.tenTG, r.tenTL, r.tenNXB]
+        .filter(Boolean)
+        .map(unaccent)
+        .join(" | ");
+      return haystack.includes(key);
+    });
+  }, [q, list]);
+
   return (
     <>
       <div className={styles.tab}>
@@ -119,12 +141,36 @@ export default function BookAdminPage() {
       <div className={styles.page}>
         <div className={styles.header}>
           <h2>Quản lý sách</h2>
-          <button className={styles.primary} onClick={startCreate}>
-            Thêm sách
-          </button>
-          <button className={styles.search} title="Tìm kiếm (chưa làm)">
-            <TextSearch />
-          </button>
+          <div className={styles.headerRight}>
+            {/* Ô tìm kiếm */}
+            <div className={styles.searchBox}>
+              <TextSearch className={styles.searchIcon} />
+              <input
+                ref={searchRef}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Tìm kiếm sách theo mã, tiêu đề, tác giả, thể loại, NXB…"
+              />
+              {!!q && (
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => {
+                    setQ("");
+                    searchRef.current?.focus();
+                  }}
+                  aria-label="Xóa tìm kiếm"
+                  title="Xóa tìm kiếm"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            <button className={styles.primary} onClick={startCreate}>
+              Thêm sách
+            </button>
+          </div>
         </div>
 
         {err && <div className={styles.error}>{err}</div>}
@@ -145,7 +191,7 @@ export default function BookAdminPage() {
             </tr>
           </thead>
           <tbody>
-            {list.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.maSach}>
                 <td>{r.maSach}</td>
                 <td>
@@ -202,15 +248,15 @@ export default function BookAdminPage() {
                 </td>
               </tr>
             ))}
-            {list.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
-                <td colSpan="9">Chưa có sách</td>
+                <td colSpan={10}>Không tìm thấy sách phù hợp</td>
               </tr>
             )}
           </tbody>
         </table>
 
-        {/* MODAL: chỉ sửa phần form thêm/sửa */}
+        {/* MODAL: form thêm/sửa */}
         <Modal
           isOpen={!!editing}
           onRequestClose={() => setEditing(null)}
@@ -284,7 +330,6 @@ export default function BookAdminPage() {
                 </div>
               </div>
 
-              {/* ẢNH BÌA */}
               <label>Ảnh bìa (JPG/PNG/WEBP/GIF)</label>
               <input
                 name="anhBia"
@@ -293,7 +338,6 @@ export default function BookAdminPage() {
                 onChange={onPickAnhBia}
               />
 
-              {/* Preview ảnh bìa */}
               <div className={styles.coverPreview}>
                 {coverPreview ? (
                   <img src={coverPreview} alt="Preview ảnh bìa" />
@@ -307,7 +351,6 @@ export default function BookAdminPage() {
                 )}
               </div>
 
-              {/* TÀI LIỆU ONLINE */}
               <label>Tài liệu online (PDF/DOC/EPUB)</label>
               <input
                 name="taiLieuOnl"
