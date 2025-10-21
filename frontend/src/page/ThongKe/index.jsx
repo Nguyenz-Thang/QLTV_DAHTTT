@@ -6,31 +6,10 @@ import { Search, BookOpen, Clock } from "lucide-react";
 const API = "http://localhost:5000/api/thongke";
 const FILE_HOST = import.meta.env.VITE_FILE_HOST || "http://localhost:5000";
 
-/** SVG fallback bìa sách (tạo ảnh với chữ cái đầu) */
-function svgCoverFallback(title = "", w = 180, h = 240) {
-  const t = (title || "").trim();
-  const initial = t ? t[0].toUpperCase() : "S";
-  const seed = t.split("").reduce((s, c) => s + c.charCodeAt(0), 0);
-  const c1 = 180 + (seed % 60);
-  const c2 = 140 + ((seed >> 1) % 70);
-
-  const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="hsl(${c1},60%,75%)"/>
-        <stop offset="100%" stop-color="hsl(${c2},60%,65%)"/>
-      </linearGradient>
-    </defs>
-    <rect width="100%" height="100%" rx="12" fill="url(#g)"/>
-    <text x="50%" y="56%" text-anchor="middle" font-family="Inter,Segoe UI,Roboto,sans-serif"
-          font-size="${Math.floor(
-            w * 0.45
-          )}" fill="rgba(0,0,0,0.65)" font-weight="700" dominant-baseline="middle">
-      ${initial}
-    </text>
-  </svg>`;
-  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+/** Fallback ảnh bìa: dùng PNG trong suốt 1x1*/
+function svgCoverFallback() {
+  // 1x1 transparent PNG (base64)
+  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 }
 
 /** Lựa URL ảnh bìa khả dụng (tự ghép FILE_HOST nếu là path tương đối) */
@@ -47,7 +26,6 @@ function TopBooks({ data = [] }) {
   if (!data?.length) {
     return <div className={styles.muted}>Không có dữ liệu top sách.</div>;
   }
-
   return (
     <div className={styles.topBooksGrid}>
       {data.slice(0, 3).map((item, i) => {
@@ -90,6 +68,16 @@ export default function ThongKe() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [details, setDetails] = useState([]);
+
+  // NEW: trạng thái cho bộ lọc rỗng
+  const [hasFiltered, setHasFiltered] = useState(false); // NEW
+  const [dateErr, setDateErr] = useState(""); // NEW
+
+  const validateRange = (f, t) => {
+    // NEW
+    if (!f || !t) return "";
+    return f > t ? "Từ ngày không được lớn hơn Đến ngày." : "";
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -148,13 +136,22 @@ export default function ThongKe() {
   }, [details, search]);
 
   async function handleFilter() {
-    if (!from || !to) {
-      alert("Vui lòng chọn đủ Từ ngày và Đến ngày");
+    // validate khoảng ngày
+    const message = validateRange(from, to);
+    if (message) {
+      setDateErr(message);
       return;
     }
+    if (!from || !to) {
+      setHasFiltered(true); // vẫn coi là đã bấm lọc để hiện khung & thông báo
+      setDetails([]); // CHANGED: làm trống dữ liệu
+      return;
+    }
+
     try {
       setLoading(true);
       setErr("");
+      setHasFiltered(true); // NEW
       const url = new URL(API);
       url.searchParams.append("from", from);
       url.searchParams.append("to", to);
@@ -163,7 +160,8 @@ export default function ThongKe() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
-      setDetails((json.data && json.data.details) || []);
+      const nextDetails = (json.data && json.data.details) || [];
+      setDetails(nextDetails);
     } catch (e) {
       setErr(e.message || "Lỗi tải dữ liệu thống kê theo ngày");
     } finally {
@@ -212,97 +210,114 @@ export default function ThongKe() {
             <TopBooks data={topBooks} />
           </section>
 
-          {/* Bảng chi tiết mượn */}
-          {details.length > 0 && (
-            <section className={styles.block}>
-              <div className={styles.blockHead}>
-                <div className={styles.blockTitle}>
-                  <BookOpen /> Danh sách chi tiết mượn sách
-                </div>
+          {/* Bảng chi tiết mượn — luôn hiển thị KHÔNG phụ thuộc details.length */}
+          <section className={styles.block}>
+            <div className={styles.blockHead}>
+              <div className={styles.blockTitle}>
+                <BookOpen /> Danh sách chi tiết mượn sách
               </div>
-              {/* Bộ lọc theo ngày */}
-              <div className={styles.dateRange}>
-                <label>
-                  Từ:
-                  <input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Đến:
-                  <input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                  />
-                </label>
-                <button onClick={handleFilter}>Lọc</button>
-                {/* Thanh tìm kiếm: lọc bảng chi tiết mượn */}
-                <div className={styles.searchBox}>
-                  <Search className={styles.searchIcon} />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Tìm trong danh sách mượn: mã PM / mã sách / tiêu đề / thủ thư / độc giả…"
-                  />
-                  {search && (
-                    <button
-                      className={styles.clear}
-                      onClick={() => setSearch("")}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
+            </div>
+
+            {/* Bộ lọc theo ngày */}
+            <div className={styles.dateRange}>
+              <label>
+                Từ:
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFrom(v);
+                    setDateErr(validateRange(v, to));
+                  }}
+                  max={to || undefined}
+                />
+              </label>
+              <label>
+                Đến:
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setTo(v);
+                    setDateErr(validateRange(from, v));
+                  }}
+                  min={from || undefined}
+                />
+              </label>
+              <button onClick={handleFilter} disabled={!!dateErr}>
+                Lọc
+              </button>
+
+              {/* Lỗi khoảng ngày */}
+              {dateErr && <div className={styles.error}>{dateErr}</div>}
+
+              {/* Thanh tìm kiếm luôn hiển thị */}
+              <div className={styles.searchBox}>
+                <Search className={styles.searchIcon} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm trong danh sách mượn: mã PM / mã sách / tiêu đề / thủ thư / độc giả…"
+                />
+                {search && (
+                  <button
+                    className={styles.clear}
+                    onClick={() => setSearch("")}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Mã sách</th>
-                    <th>Tên sách</th>
-                    <th>Tên thủ thư</th>
-                    <th>Tên độc giả</th>
-                    <th>Ngày mượn</th>
-                    <th>Ngày trả</th>
-                    <th style={{ textAlign: "right" }}>Số lượng</th>
+            </div>
+
+            {/* Bảng — luôn xuất hiện; nếu không có dòng thì hiển thị hàng “không có bản ghi” */}
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Mã sách</th>
+                  <th>Tên sách</th>
+                  <th>Tên thủ thư</th>
+                  <th>Tên độc giả</th>
+                  <th>Ngày mượn</th>
+                  <th>Ngày trả</th>
+                  <th style={{ textAlign: "right" }}>Số lượng</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDetails.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.maSach}</td>
+                    <td>{r.tenSach}</td>
+                    <td>{r.tenThuThu || "—"}</td>
+                    <td>{r.tenDocGia || "—"}</td>
+                    <td>
+                      {r.ngayMuon
+                        ? new Date(r.ngayMuon).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td>
+                      {r.ngayHenTra
+                        ? new Date(r.ngayHenTra).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td style={{ textAlign: "right" }}>{r.soLuong}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredDetails.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.maSach}</td>
-                      <td>{r.tenSach}</td>
-                      <td>{r.tenThuThu || "—"}</td>
-                      <td>{r.tenDocGia || "—"}</td>
-                      <td>
-                        {r.ngayMuon
-                          ? new Date(r.ngayMuon).toLocaleDateString()
-                          : "—"}
-                      </td>
-                      <td>
-                        {r.ngayHenTra
-                          ? new Date(r.ngayHenTra).toLocaleDateString()
-                          : "—"}
-                      </td>
-                      <td style={{ textAlign: "right" }}>{r.soLuong}</td>
-                    </tr>
-                  ))}
-                  {filteredDetails.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan="7"
-                        style={{ textAlign: "center", padding: 12 }}
-                      >
-                        Không có bản ghi phù hợp.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </section>
-          )}
+                ))}
+                {filteredDetails.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{ textAlign: "center", padding: 22 }}
+                    >
+                      Không có dữ liệu trong khoảng ngày đã chọn.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
         </>
       )}
     </div>
