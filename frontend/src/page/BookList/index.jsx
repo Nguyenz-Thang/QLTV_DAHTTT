@@ -108,7 +108,7 @@ export default function BookListPage() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Tìm theo tiêu đề, tác giả, thể loại…"
+                placeholder="Tìm sách theo tiêu đề, tác giả, thể loại…"
               />
               {q && (
                 <button

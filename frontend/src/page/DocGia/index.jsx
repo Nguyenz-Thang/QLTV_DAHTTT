@@ -112,7 +112,7 @@ export default function DocGia() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Tìm theo họ tên, MSV, email, khoa, lớp, SĐT…"
+                placeholder="Tìm độc giả theo họ tên, MSV, email, khoa, lớp, SĐT…"
               />
               {q && (
                 <button className={styles.clear} onClick={() => setQ("")}>

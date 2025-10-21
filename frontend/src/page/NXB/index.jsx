@@ -95,7 +95,7 @@ export default function NXB() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Tìm theo tên, email, SĐT, địa chỉ…"
+                placeholder="Tìm NXB theo tên, email, SĐT, địa chỉ…"
               />
               {q && (
                 <button className={styles.clear} onClick={() => setQ("")}>

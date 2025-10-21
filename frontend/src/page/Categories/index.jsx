@@ -89,7 +89,7 @@ export default function Categories() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Tìm theo tên thể loại…"
+                placeholder="Tìm thể loại theo tên thể loại…"
               />
               {q && (
                 <button
