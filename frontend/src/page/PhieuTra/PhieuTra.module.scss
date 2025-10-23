@@ -392,3 +392,93 @@
   text-align: center;
   color: #666;
 }
+
+/* ===== Suggest loading & empty ===== */
+.suggestLoading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: #223771;
+  background: #fff;
+}
+
+/* Spinner nhỏ trước chữ "Đang tìm…" */
+.suggestLoading::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ccd5f0;
+  border-top-color: #fd7e14;
+  border-radius: 50%;
+  animation: suggestSpin 0.8s linear infinite;
+}
+
+@keyframes suggestSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestEmpty {
+  padding: 12px;
+  text-align: center;
+  color: #8796d1;
+  background: #fafbff;
+  border-top: 1px solid #f1f3ff; /* tách nhẹ khỏi ô input */
+}
+
+/* Cải thiện khả năng truy cập & điều hướng bàn phím cho từng item */
+.suggestItem:focus {
+  outline: 2px solid #fd7e14;
+  outline-offset: -2px;
+  background: #fff7ec;
+}
+
+/* Thẩm mỹ scrollbar cho danh sách gợi ý (webkit) */
+.suggestList::-webkit-scrollbar {
+  width: 8px;
+}
+.suggestList::-webkit-scrollbar-track {
+  background: #f1f3ff;
+  border-radius: 10px;
+}
+.suggestList::-webkit-scrollbar-thumb {
+  background: #ccd5f0;
+  border-radius: 10px;
+}
+.suggestList::-webkit-scrollbar-thumb:hover {
+  background: #b6c2ea;
+}
+
+/* 🔔 NEW: Toast */
+.toast {
+  position: fixed;
+  top: 65px;
+  right: 56px;
+  z-index: 9999;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 220ms ease;
+  max-width: min(440px, 90vw);
+  line-height: 1.25;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.success {
+  background: #e6f8ec;
+  color: #066e2c;
+  border: 1px solid #b9ebcb;
+}
+.error {
+  background: #fdecec;
+  color: #8a1c1c;
+  border: 1px solid #f5b7b7;
+}

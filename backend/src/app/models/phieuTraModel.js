@@ -31,12 +31,15 @@ async function _getBorrowReturnSummaryTx(req, maPM, maSach) {
 async function listPhieuTra() {
   const pool = await getPool();
   const rs = await pool.request().query(`
-    SELECT pt.maPT, pt.maPM, pt.maTT, pt.ngayTra,
+    SELECT pt.maPT, pt.maPM, pt.maTT, pt.ngayTra,dg.hoTen,dg.MSV,tt.maTT, tt.tenTT,
            COUNT(ct.maCTPT) AS soDauSach,
            ISNULL(SUM(ct.soLuong),0) AS tongSoLuong
     FROM PhieuTra pt
-    LEFT JOIN ChiTietPhieuTra ct ON ct.maPT = pt.maPT
-    GROUP BY pt.maPT, pt.maPM, pt.maTT, pt.ngayTra
+    LEFT JOIN ChiTietPhieuTra ct ON ct.maPT = pt.maPT 
+    LEFT JOIN PhieuMuon pm ON pm.maPM = pt.maPM 
+    LEFT JOIN DocGia dg ON dg.maDG = pm.maDG 
+    LEFT JOIN ThuThu tt ON tt.maTT = pt.maTT 
+    GROUP BY pt.maPT, pt.maPM, pt.maTT, pt.ngayTra, dg.hoTen, dg.MSV,tt.maTT, tt.tenTT
     ORDER BY pt.ngayTra DESC, pt.maPT DESC
   `);
   return rs.recordset;
@@ -47,7 +50,9 @@ async function getPhieuTra(maPT) {
   const head = await pool
     .request()
     .input("maPT", sql.VarChar, maPT)
-    .query(`SELECT maPT, maPM, maTT, ngayTra FROM PhieuTra WHERE maPT=@maPT`);
+    .query(
+      `SELECT * FROM PhieuTra pt join ThuThu tt on pt.maTT = tt.maTT join PhieuMuon pm on pm.maPM = pt.maPM join DocGia dg on dg.maDG = pm.maDG WHERE maPT=@maPT`
+    );
   if (!head.recordset.length) return null;
 
   const items = await pool.request().input("maPT", sql.VarChar, maPT).query(`

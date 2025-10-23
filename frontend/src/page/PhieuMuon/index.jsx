@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useCallback } from "react";
+import { useEffect, useState, useContext, useCallback, useRef } from "react";
 import styles from "./PhieuMuon.module.scss";
 import Modal from "../../components/Modal";
 import { usePhieuMuonApi } from "../../api/phieuMuonApi";
@@ -80,6 +80,27 @@ export default function PhieuMuon() {
     false
   );
 
+  /* 🔔 NEW: Toast state & helpers */
+  const [toast, setToast] = useState({
+    show: false,
+    type: "success", // 'success' | 'error'
+    message: "",
+  });
+  const toastTimerRef = useRef(null);
+  const showToast = (message, type = "success", ms = 3000) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ show: true, type, message });
+    toastTimerRef.current = setTimeout(() => {
+      setToast((t) => ({ ...t, show: false }));
+    }, ms);
+  };
+  useEffect(
+    () => () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    },
+    []
+  );
+
   const load = async () => {
     try {
       setLoading(true);
@@ -109,6 +130,7 @@ export default function PhieuMuon() {
       });
     } catch (e) {
       setErr(e.message || "Lỗi tải dữ liệu");
+      showToast(e.message || "Lỗi tải dữ liệu", "error");
     } finally {
       setLoading(false);
     }
@@ -125,13 +147,11 @@ export default function PhieuMuon() {
 
   const startCreate = () => {
     setEditing((ed) => {
-      // nếu đã có nháp thì giữ nguyên, nếu chưa thì khởi tạo
       const hasDraft = ed && (ed.maDG || (ed.items && ed.items.length > 0));
       return hasDraft
         ? { ...ed, maTT: user?.maTT || ed.maTT || "" }
         : { ...initialDraft(), maTT: user?.maTT || "" };
     });
-    // đồng bộ bộ chọn độc giả với draft hiện tại
     setMsv("");
     setDgSelect((s) => s || "");
     setModalOpen(true);
@@ -153,16 +173,23 @@ export default function PhieuMuon() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    const isEdit = !!editing?.maPM;
 
     /* resolve maDG theo ưu tiên MSV */
     let maDGSubmit = dgSelect || "";
     const msvInput = (msv || "").trim();
     if (msvInput) {
       const found = meta.docGia.find((d) => String(d.msv) === msvInput);
-      if (!found) return alert("Không tìm thấy độc giả với MSV đã nhập.");
+      if (!found) {
+        showToast("Không tìm thấy độc giả với MSV đã nhập.", "error");
+        return;
+      }
       maDGSubmit = found.id;
     }
-    if (!maDGSubmit) return alert("Chọn độc giả hoặc nhập MSV hợp lệ.");
+    if (!maDGSubmit) {
+      showToast("Chọn độc giả hoặc nhập MSV hợp lệ.", "error");
+      return;
+    }
 
     const maTTSubmit = user?.maTT || editing?.maTT || "";
 
@@ -182,12 +209,20 @@ export default function PhieuMuon() {
         }))
         .filter((x) => x.maSach),
     };
-    if (!payload.items.length) return alert("Thêm ít nhất 1 sách.");
+    if (!payload.items.length) {
+      showToast("Thêm ít nhất 1 sách.", "error");
+      return;
+    }
 
     setSaving(true);
     try {
-      if (editing?.maPM) await api.update(editing.maPM, payload);
-      else await api.create(payload);
+      if (isEdit) {
+        await api.update(editing.maPM, payload);
+        showToast(`Đã cập nhật phiếu mượn ${editing.maPM}`, "success");
+      } else {
+        await api.create(payload);
+        showToast("Đã tạo phiếu mượn mới", "success");
+      }
 
       setModalOpen(false);
       resetEditing(); // xóa nháp sau khi lưu thành công
@@ -195,7 +230,7 @@ export default function PhieuMuon() {
       setDgSelect("");
       await load();
     } catch (e2) {
-      alert(e2.message || "Lưu phiếu mượn thất bại");
+      showToast(e2.message || "Lưu phiếu mượn thất bại", "error");
     } finally {
       setSaving(false);
     }
@@ -205,9 +240,10 @@ export default function PhieuMuon() {
     if (!window.confirm(`Xoá phiếu mượn ${r.maPM}?`)) return;
     try {
       await api.remove(r.maPM);
+      showToast(`Đã xoá phiếu mượn ${r.maPM}`, "success");
       await load();
     } catch (e) {
-      alert(e.message || "Không thể xoá");
+      showToast(e.message || "Không thể xoá", "error");
     }
   };
 
@@ -244,6 +280,21 @@ export default function PhieuMuon() {
 
   return (
     <>
+      {/* 🔔 Toast */}
+      {toast.show && (
+        <div
+          className={[
+            styles.toast,
+            toast.type === "success" ? styles.success : styles.error,
+            styles.show,
+          ].join(" ")}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className={styles.tab}>
         <div className={styles.nd}>
           <span className={styles.item}>Quản lý phiếu mượn trả</span>
@@ -390,7 +441,9 @@ export default function PhieuMuon() {
                   type="date"
                   name="ngayHenTra"
                   value={editing.ngayHenTra || ""}
+                  min={editing.ngayMuon?.substring(0, 10) || todayStr} // chặn past
                   onChange={(e) => setNgayHenTra(e.target.value)}
+                  title="Không được chọn ngày quá khứ"
                 />
               </div>
               <div />
@@ -469,8 +522,12 @@ function Row({ row, onEdit, onDelete }) {
     <>
       <tr>
         <td>{row.maPM}</td>
-        <td>{row.tenDG || row.maDG}</td>
-        <td>{row.tenTT || row.maTT}</td>
+        <td>
+          {row.tenDG || row.maDG} ( {row.maDG} - {row.MSV} )
+        </td>
+        <td>
+          {row.tenTT || row.maTT} ( {row.maTT} )
+        </td>
         <td>
           {row.ngayMuon ? new Date(row.ngayMuon).toLocaleDateString() : "—"}
         </td>

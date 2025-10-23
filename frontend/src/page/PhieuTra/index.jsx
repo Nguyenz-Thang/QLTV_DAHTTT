@@ -1,5 +1,4 @@
-// src/pages/PhieuTra/PhieuTra.jsx
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useEffect, useMemo, useState, useContext, useRef } from "react";
 import styles from "./PhieuTra.module.scss";
 import { usePhieuTraApi } from "../../api/phieuTraApi";
 import Modal from "../../components/Modal";
@@ -27,6 +26,7 @@ export default function PhieuTra() {
   const [q, setQ] = useState("");
 
   const [viewing, setViewing] = useState(null);
+
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
     maPM: "",
@@ -36,6 +36,27 @@ export default function PhieuTra() {
     pmInfo: null,
   });
   const [saving, setSaving] = useState(false);
+
+  // 🔔 NEW: Toast state & helpers
+  const [toast, setToast] = useState({
+    show: false,
+    type: "success", // 'success' | 'error'
+    message: "",
+  });
+  const toastTimerRef = useRef(null);
+  const showToast = (message, type = "success", ms = 3000) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ show: true, type, message });
+    toastTimerRef.current = setTimeout(() => {
+      setToast((t) => ({ ...t, show: false }));
+    }, ms);
+  };
+  useEffect(
+    () => () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    },
+    []
+  );
 
   function todayStr() {
     const s = new Date().toISOString();
@@ -49,7 +70,9 @@ export default function PhieuTra() {
       const data = await api.list();
       setRows(data.data || data || []);
     } catch (e) {
-      setErr(e.message || "Lỗi tải phiếu trả");
+      const msg = e.message || "Lỗi tải phiếu trả";
+      setErr(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -86,9 +109,10 @@ export default function PhieuTra() {
     if (!window.confirm(`Xóa phiếu trả ${maPT}?`)) return;
     try {
       await api.remove(maPT);
+      showToast(`Đã xóa phiếu trả ${maPT}`, "success");
       await load();
     } catch (e) {
-      alert(e.message || "Không thể xóa");
+      showToast(e.message || "Không thể xóa", "error");
     }
   };
 
@@ -97,7 +121,7 @@ export default function PhieuTra() {
       const data = await api.detail(maPT);
       setViewing(data.data || data);
     } catch (e) {
-      alert(e.message || "Lỗi lấy chi tiết");
+      showToast(e.message || "Lỗi lấy chi tiết", "error");
     }
   };
 
@@ -110,9 +134,17 @@ export default function PhieuTra() {
     try {
       setSLoading(true);
       const data = await api.pmSuggest(text.trim());
-      setSuggests(data.data || data || []);
-    } catch (e) {
+      // chỉ giữ PM còn nợ
+      const list = (data.data || data || []).filter(
+        (pm) => Number(pm.tongNo) > 0
+      );
+      setSuggests(list);
+      if (list.length === 0) {
+        showToast("Không tìm thấy phiếu mượn còn nợ phù hợp.", "error");
+      }
+    } catch {
       setSuggests([]);
+      showToast("Không thể tra cứu phiếu mượn.", "error");
     } finally {
       setSLoading(false);
     }
@@ -122,7 +154,22 @@ export default function PhieuTra() {
     try {
       const remainRes = await api.pmRemaining(pm.maPM);
       const arr = remainRes.data || remainRes || [];
-      // pick mặc định: check tất cả với số lượng = conNo
+
+      if (!arr || arr.length === 0) {
+        setSuggestQ(`${pm.maPM} - ${pm.hoTen}`);
+        setSuggests([]);
+        setForm((f) => ({
+          ...f,
+          maPM: "",
+          pmInfo: null,
+          remain: [],
+          pick: {},
+        }));
+        showToast("Phiếu mượn này đã trả đủ, không còn nợ.", "error");
+        return;
+      }
+
+      // pick mặc định
       const pickDefault = arr.reduce((m, it) => {
         m[it.maSach] = { checked: true, soLuong: it.conNo, tinhTrang: "" };
         return m;
@@ -137,7 +184,7 @@ export default function PhieuTra() {
       setSuggests([]);
       setSuggestQ(`${pm.maPM} - ${pm.hoTen}`);
     } catch (e) {
-      alert(e.message || "Không load được danh sách còn nợ.");
+      showToast(e.message || "Không load được danh sách còn nợ.", "error");
     }
   };
 
@@ -161,7 +208,10 @@ export default function PhieuTra() {
 
   const submitCreate = async (e) => {
     e.preventDefault();
-    if (!form.maPM) return alert("Chọn phiếu mượn trước.");
+    if (!form.maPM) {
+      showToast("Chọn phiếu mượn trước.", "error");
+      return;
+    }
 
     // map remain -> conNo để kiểm soát số lượng
     const remainMap = new Map(form.remain.map((it) => [String(it.maSach), it]));
@@ -178,7 +228,10 @@ export default function PhieuTra() {
       })
       .filter(Boolean);
 
-    if (items.length === 0) return alert("Chọn ít nhất 1 sách để trả.");
+    if (items.length === 0) {
+      showToast("Chọn ít nhất 1 sách để trả.", "error");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -190,9 +243,10 @@ export default function PhieuTra() {
         items,
       });
       setCreating(false);
+      showToast("Đã tạo phiếu trả", "success");
       await load();
     } catch (e2) {
-      alert(e2.message || "Tạo phiếu trả thất bại");
+      showToast(e2.message || "Tạo phiếu trả thất bại", "error");
     } finally {
       setSaving(false);
     }
@@ -200,6 +254,21 @@ export default function PhieuTra() {
 
   return (
     <>
+      {/* 🔔 Toast */}
+      {toast.show && (
+        <div
+          className={[
+            styles.toast,
+            toast.type === "success" ? styles.success : styles.error,
+            styles.show,
+          ].join(" ")}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className={styles.tab}>
         <div className={styles.nd}>
           <span className={styles.item}>Quản lý phiếu mượn trả</span>
@@ -246,6 +315,8 @@ export default function PhieuTra() {
               <tr>
                 <th>Mã PT</th>
                 <th>Mã PM</th>
+                <th>Thủ thư</th>
+                <th>Độc giả</th>
                 <th>Ngày trả</th>
                 <th>Số đầu sách</th>
                 <th>Tổng SL</th>
@@ -257,6 +328,12 @@ export default function PhieuTra() {
                 <tr key={r.maPT}>
                   <td>{r.maPT}</td>
                   <td>{r.maPM}</td>
+                  <td>
+                    {r.tenTT} ( {r.maTT[0]} )
+                  </td>
+                  <td>
+                    {r.hoTen} ( {r.MSV} )
+                  </td>
                   <td>{new Date(r.ngayTra).toLocaleDateString()}</td>
                   <td>{r.soDauSach}</td>
                   <td>{r.tongSoLuong}</td>
@@ -306,7 +383,9 @@ export default function PhieuTra() {
               <Search className={styles.suggestIcon} />
               <input
                 value={suggestQ}
-                onChange={(e) => setSuggestQ(e.target.value)}
+                onChange={(e) => {
+                  setSuggestQ(e.target.value);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -327,28 +406,41 @@ export default function PhieuTra() {
               )}
             </div>
 
-            {suggests.length > 0 && (
+            {(sLoading || suggests.length >= 0) && (
               <div className={styles.suggestList}>
                 {sLoading && (
-                  <div className={styles.suggestLoading}>Đang tìm…</div>
+                  <div className={styles.suggestLoading} aria-live="polite">
+                    Đang tìm…
+                  </div>
                 )}
-                {suggests.map((pm) => (
-                  <button
-                    key={pm.maPM}
-                    type="button"
-                    className={styles.suggestItem}
-                    onClick={() => choosePM(pm)}
-                  >
-                    <div>
-                      <strong>{pm.maPM}</strong> • {pm.hoTen}
-                    </div>
-                    <div className={styles.suggestMeta}>
-                      {pm.maSV ? <>MSSV: {pm.maSV} • </> : null}
-                      Ngày mượn: {pm.ngayMuon?.slice(0, 10) || "—"} • SL còn nợ:{" "}
-                      {pm.tongNo}
-                    </div>
-                  </button>
-                ))}
+
+                {!sLoading && suggests.length === 0 && (
+                  <div className={styles.suggestEmpty} aria-live="polite">
+                    Không có dữ liệu phiếu mượn.
+                  </div>
+                )}
+
+                {!sLoading && suggests.length > 0 && (
+                  <>
+                    {suggests.map((pm) => (
+                      <button
+                        key={pm.maPM}
+                        type="button"
+                        className={styles.suggestItem}
+                        onClick={() => choosePM(pm)}
+                      >
+                        <div>
+                          <strong>{pm.maPM}</strong> • {pm.hoTen}
+                        </div>
+                        <div className={styles.suggestMeta}>
+                          {pm.maSV ? <>MSSV: {pm.maSV} • </> : null}
+                          Ngày mượn: {pm.ngayMuon?.slice(0, 10) || "—"} • SL còn
+                          nợ: {pm.tongNo}
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -381,9 +473,8 @@ export default function PhieuTra() {
                 <input
                   type="date"
                   value={form.ngayTra}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, ngayTra: e.target.value }))
-                  }
+                  disabled
+                  title="Ngày trả do hệ thống tự điền = hôm nay"
                 />
               </div>
             </div>
@@ -541,14 +632,23 @@ export default function PhieuTra() {
             <h3>Phiếu trả: {viewing.maPT}</h3>
             <div className={styles.meta}>
               <div>
-                <strong>Mã PM:</strong> {viewing.maPM}
+                <strong>Mã PM:</strong> {viewing.maPM[0]}
               </div>
+
               <div>
                 <strong>Ngày trả:</strong>{" "}
                 {new Date(viewing.ngayTra).toLocaleString()}
               </div>
               <div>
-                <strong>Thủ thư:</strong> {viewing.maTT || "—"}
+                <strong>Thủ thư:</strong> {viewing.tenTT || "—"} ({" "}
+                {viewing.maTT[0]})
+              </div>
+              <div>
+                <strong>Độc giả:</strong> {viewing.hoTen || "—"} ({" "}
+                {viewing.maDG[0]})
+              </div>
+              <div>
+                <strong>MSV:</strong> {viewing.MSV || "—"}
               </div>
             </div>
 
@@ -587,13 +687,4 @@ export default function PhieuTra() {
       </Modal>
     </>
   );
-}
-
-// --- helper: debounce ---
-function debounce(fn, delay = 300) {
-  let t = null;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), delay);
-  };
 }
