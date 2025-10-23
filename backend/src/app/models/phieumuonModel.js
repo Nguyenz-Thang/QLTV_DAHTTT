@@ -20,7 +20,7 @@ async function listAll(q = "") {
   const rs = await pool.request().input("k", sql.NVarChar, `%${q}%`).query(`
     ;WITH PM AS (
       SELECT pm.maPM, pm.maDG, pm.maTT, pm.ngayMuon, pm.ngayHenTra,
-             dg.hoTen AS tenDG, tt.tenTT,
+             dg.hoTen AS tenDG, tt.tenTT,dg.MSV,
              (SELECT COUNT(*) FROM ChiTietPhieuMuon c WHERE c.maPM = pm.maPM) AS soSach
       FROM PhieuMuon pm
       LEFT JOIN DocGia dg ON pm.maDG = dg.maDG
@@ -31,6 +31,7 @@ async function listAll(q = "") {
   `);
 
   const list = rs.recordset;
+
   if (!list.length) return [];
 
   const ids = list.map((x) => `'${x.maPM}'`).join(",");

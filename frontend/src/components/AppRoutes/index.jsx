@@ -23,6 +23,7 @@ import Accounts from "../../page/Accounts";
 import BookDetail from "../../page/BookDetail";
 import ThongKe from "../../page/ThongKe";
 import HistoryPage from "../../page/HistoryPage";
+import NotFound from "../../page/NotFound";
 // import MyBorrows from "../../page/BorrowHistory/BorrowHistory";
 // import UseState from "@/pages/UseState";
 
@@ -44,6 +45,7 @@ function AppRoutes() {
             path="/sach"
             element={token ? <BookList /> : <Navigate to="/login" />}
           /> */}
+          <Route path="*" element={<NotFound />} />
           <Route element={token ? <DefaultLayout /> : <Navigate to="/login" />}>
             <Route element={<MainContent />}>
               <Route path="/home" element={<Home />} />
