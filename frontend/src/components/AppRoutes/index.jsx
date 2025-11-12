@@ -37,6 +37,7 @@ function AppRoutes() {
             path="/"
             element={token ? <Navigate to="/home" /> : <Navigate to="/login" />}
           />
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
@@ -47,8 +48,6 @@ function AppRoutes() {
           <Route path="*" element={<NotFound />} />
           <Route element={token ? <DefaultLayout /> : <Navigate to="/login" />}>
             <Route element={<MainContent />}>
-              <Route path="/login" element={<Home />} />
-
               <Route path="/home" element={<Home />} />
               <Route path="/sach" element={<BookList />} />
               <Route path="/settings" element={<Settings />} />
