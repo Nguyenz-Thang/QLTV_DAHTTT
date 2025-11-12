@@ -5,7 +5,7 @@ import Login from "../../page/Login";
 import Register from "../../page/Register";
 import BookList from "../../page/BookList";
 import { AuthContext } from "../../context/AuthContext";
-import DefaultLayout from "../../layouts/DefaultLayout";
+import DefaultLayout from "../../Layouts/DefaultLayout";
 import ForgotPassword from "../../page/ForgotPassword";
 import ChangePassword from "../../page/ChangePassword";
 import Home from "../../page/Home";
