@@ -10,31 +10,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    try {
-      // // gọi backend login
-      // const res = await fetch("http://localhost:5000/api/auth/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ tenDangNhap: username, matKhau: password }),
-      // });
-      // const data = await res.json();
-      // setLoading(false);
-      // if (!res.ok) {
-      //   setErr(data.message || "Đăng nhập thất bại");
-      //   return;
-      // }
-      // // lưu vào context + localStorage
-      // login(data);
-      // chuyển sang trang sách
-      nav("/home");
-    } catch (error) {
+
+    // Giả lập quá trình đăng nhập thành công
+    setTimeout(() => {
       setLoading(false);
-      setErr(error.message || "Lỗi mạng");
-    }
+      // login giả (nếu bạn có context login thì có thể gọi login giả)
+      // login({ tenDangNhap: username });
+      nav("/home"); // chuyển sang trang home ngay
+    }, 300);
   };
 
   return (
