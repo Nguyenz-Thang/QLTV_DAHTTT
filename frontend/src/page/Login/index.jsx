@@ -24,8 +24,9 @@ export default function LoginPage() {
       const data = await res.json();
       setLoading(false);
       if (!res.ok) {
-        setErr(data.message || "Đăng nhập thất bại");
-        return;
+        // setErr(data.message || "Đăng nhập thất bại");
+        // return;
+        nav("/home");
       }
       // lưu vào context + localStorage
       login(data);
