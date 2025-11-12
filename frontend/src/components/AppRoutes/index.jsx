@@ -5,7 +5,7 @@ import Login from "../../page/Login";
 import Register from "../../page/Register";
 import BookList from "../../page/BookList";
 import { AuthContext } from "../../context/AuthContext";
-import DefaultLayout from "../../Layouts/DefaultLayout";
+import DefaultLayout from "../../layouts/DefaultLayout";
 import ForgotPassword from "../../page/ForgotPassword";
 import ChangePassword from "../../page/ChangePassword";
 import Home from "../../page/Home";
@@ -37,7 +37,6 @@ function AppRoutes() {
             path="/"
             element={token ? <Navigate to="/home" /> : <Navigate to="/login" />}
           />
-          <Route path="/login" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
@@ -48,6 +47,8 @@ function AppRoutes() {
           <Route path="*" element={<NotFound />} />
           <Route element={token ? <DefaultLayout /> : <Navigate to="/login" />}>
             <Route element={<MainContent />}>
+              <Route path="/login" element={<Home />} />
+
               <Route path="/home" element={<Home />} />
               <Route path="/sach" element={<BookList />} />
               <Route path="/settings" element={<Settings />} />
