@@ -277,6 +277,7 @@ export default function PhieuMuon() {
       ...ed,
       items: (ed.items || []).filter((_, i) => i !== idx),
     }));
+  console.log(editing);
 
   return (
     <>
